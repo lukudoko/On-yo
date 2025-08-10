@@ -1,113 +1,257 @@
-import Image from "next/image";
-import { Geist, Geist_Mono } from "next/font/google";
+import Link from 'next/link';
+import { useSession } from 'next-auth/react';
+import { Button, Progress, Card, Chip } from '@heroui/react';
+import { formatDistanceToNow, parseISO } from 'date-fns';
+import { enIE } from 'date-fns/locale';
+import { getDashboardData } from '@/utils/dashboard';
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+export default function Home({ dashboardData }) {
+  const { data: session, status } = useSession();
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+  
 
-export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              pages/index.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  if (status === 'loading') {
+    return (
+      <div className="p-6 max-w-5xl mx-auto">
+        <div className="text-center py-10">
+          <p>Loading dashboard...</p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+      </div>
+    );
+  }
+
+  if (!dashboardData) {
+    return (
+      <div className="p-6 max-w-5xl mx-auto">
+        <div className="text-center py-10">
+          <p>Unable to load dashboard data. Please try signing in again.</p>
+          { }
+        </div>
+      </div>
+    );
+  }
+
+
+
+  const { progress, nextGroup, stats, recentActivity, weeklyStats } = dashboardData;
+
+  const formatRelativeTime = (dateString) => {
+    if (!dateString) return 'N/A';
+
+    try {
+      const date = parseISO(dateString);
+      return formatDistanceToNow(date, {
+        addSuffix: true,
+        locale: enIE
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'N/A';
+    }
+  };
+
+  return (
+    <div className="p-6 max-w-5xl mx-auto">
+      { }
+      <div className="mb-6">
+        {status === 'authenticated' ? (
+          <p className="text-3xl font-bold">
+            Hi {session?.user?.name?.replace(/\s*\([^)]*\)$/, '').trim() || ''}!
+          </p>
+        ) : (
+          <div></div>
+        )}
+
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <Card className="p-6 border-4 rounded-3xl border-black">
+          <h3 className="text-xl font-semibold mb-4 text-gray-800">Jump back in!</h3>
+          <div className='flex flex-1 flex-col justify-center items-center'>
+            <p className="text-6xl font-jp-round font-bold mb-4">{nextGroup.reading}</p>
+            <Button
+              as="a"
+              href={`/groups/${nextGroup.reading}`}
+              color="primary"
+              size="lg"
+              className="font-medium"
+            >
+              Start Learning
+            </Button>
+
+          </div>
+        </Card>
+
+        <Card className="p-6  border-4 rounded-3xl border-black ">
+          <h3 className="text-xl font-semibold mb-4 text-gray-800">Kanji Progress</h3>
+          <div className="mb-2">
+            <span className="text-2xl font-bold text-blue-600">{progress.mastered}</span>
+            <span className="text-gray-600"> / {progress.total} kanji</span>
+          </div>
+          <Progress
+            aria-label="Kanji progress"
+            size="lg"
+            value={Math.round((progress.mastered / Math.max(progress.total, 1)) * 100)}
+            color="primary"
+            className="mb-2"
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
+          <p className="text-sm text-gray-500">
+            {Math.round((progress.mastered / Math.max(progress.total, 1)) * 100)}% complete
+          </p>
+
+          { }
+          <div className="flex gap-2 mt-3">
+            <Chip size="sm" className="text-white bg-green-500" variant="flat">
+              {progress.mastered} Mastered
+            </Chip>
+            <Chip size="sm" className="text-white bg-yellow-500" variant="flat">
+              {progress.learning} Learning
+            </Chip>
+            <Chip size="sm" className='text-white bg-red-500' variant="flat">
+              Don't Know {progress.unlearned}
+            </Chip>
+          </div>
+
+
+          {weeklyStats && (
+            <div className="mt-4 p-3 bg-gray-50 rounded-lg text-xs">
+              <div className="flex justify-between">
+                <span className="text-gray-600">This week:</span>
+                <span className="font-semibold text-blue-600">{weeklyStats.thisWeek} kanji</span>
+              </div>
+              <div className="flex justify-between mt-1">
+                <span className="text-gray-600">Last week:</span>
+                <span className="font-semibold text-gray-600">{weeklyStats.lastWeek} kanji</span>
+              </div>
+              {weeklyStats.thisWeek > weeklyStats.lastWeek && (
+                <div className="mt-1 text-green-600 font-medium text-center">
+                  ↑ {Math.round(((weeklyStats.thisWeek - weeklyStats.lastWeek) / Math.max(weeklyStats.lastWeek, 1)) * 100)}% improvement!
+                </div>
+              )}
+            </div>
+          )}
+        </Card>
+        <Card className="p-4 border-4 rounded-3xl border-black text-center">
+          I'll add stuff here later
+        </Card>
+        <Card className="p-6  border-4 rounded-3xl border-black ">
+          <h3 className="text-xl font-semibold mb-4 text-gray-800">Onyomi Groups</h3>
+          <div className="mb-2">
+            <span className="text-2xl font-bold text-green-600">{stats.completedGroups}</span>
+            <span className="text-gray-600"> / {stats.totalGroups} groups</span>
+          </div>
+          <Progress
+            aria-label="Groups progress"
+            size="lg"
+            value={Math.round((stats.completedGroups / Math.max(stats.totalGroups, 1)) * 100)}
+            color="success"
+            className="mb-2"
           />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          <p className="text-sm text-gray-500">
+            {Math.round((stats.completedGroups / Math.max(stats.totalGroups, 1)) * 100)}% complete
+          </p>
+
+          { }
+          <div className="flex gap-2 mt-3">
+            <Chip size="sm" color="primary" variant="flat">
+              Total: {stats.totalGroups}
+            </Chip>
+            <Chip size="sm" color="secondary" variant="flat">
+              In Progress: {stats.inProgressGroups}
+            </Chip>
+          </div>
+        </Card>
+      </div>
+
+      { }
+      {recentActivity && recentActivity.length > 0 && (
+        <div className="mb-8">
+          <Card className="p-6 border-4 rounded-3xl border-black">
+            <h3 className="text-xl font-semibold mb-4 text-gray-800">Recent Activity</h3>
+            <div className="space-y-3">
+              {recentActivity.map((activity, index) => (
+                <div
+                  key={`${activity.kanji}-${activity.lastStudied}`}
+                  className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl font-jp-round">{activity.kanji}</span>
+                    <div>
+                      <p className="font-medium text-sm">{activity.kanji}</p>
+                      <p className="text-xs text-gray-500">{activity.onyomi} group</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${activity.masteryLevel === 2 ? 'bg-green-100 text-green-800' :
+                      activity.masteryLevel === 1 ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                      {activity.masteryLevel === 2 ? 'Mastered' :
+                        activity.masteryLevel === 1 ? 'Learning' : 'Review'}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {activity.lastStudied ? formatRelativeTime(activity.lastStudied) : 'N/A'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      )}
+
+      { }
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Link href="/stat" className="block">
+          <Card className="p-6 hover:shadow-md transition-shadow duration-200 cursor-pointer h-full">
+            <h3 className="text-xl font-semibold mb-2 text-gray-800">Study by Usefulness</h3>
+            <p className="text-gray-600 mb-4">Follow the most statistically useful kanji groups first</p>
+            <div className="text-blue-600 font-medium">View All Groups →</div>
+          </Card>
+        </Link>
+
+        <Link href="/jlpt" className="block">
+          <Card className="p-6 hover:shadow-md transition-shadow duration-200 cursor-pointer h-full">
+            <h3 className="text-xl font-semibold mb-2 text-gray-800">Study by JLPT Level</h3>
+            <p className="text-gray-600 mb-4">Progress through kanji organized by JLPT difficulty</p>
+            <div className="text-blue-600 font-medium">View JLPT Track →</div>
+          </Card>
+        </Link>
+      </div>
     </div>
   );
+}
+
+export async function getServerSideProps(context) {
+  const { req, res } = context;
+
+  try {
+
+    const dashboardData = await getDashboardData(req, res);
+
+    if (dashboardData === null) {
+
+      return {
+        redirect: {
+          destination: '/auth/signin',
+          permanent: false,
+        },
+      };
+    }
+
+    return {
+      props: {
+        dashboardData,
+      },
+    };
+  } catch (error) {
+
+    console.error('Unexpected error in dashboard getServerSideProps:', error);
+
+    return {
+      props: {
+        dashboardData: null,
+      },
+    };
+  }
 }

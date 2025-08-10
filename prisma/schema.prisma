@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Kanji {
+  id               Int            @id @default(autoincrement())
+  character        String         @unique
+  strokes          Int
+  grade            Int?
+  freq             Int?
+  jlpt_new         Int?
+  meanings         String[]
+  readings_on      String[]
+  readings_kun     String[]
+  primary_onyomi   String?
+  usefulness_score Float
+  onyomiGroup      OnyomiGroup?   @relation(fields: [primary_onyomi], references: [reading])
+  progress         UserProgress[] // Add this line for the reverse relation
+}
+
+model OnyomiGroup {
+  id               Int     @id @default(autoincrement())
+  reading          String  @unique
+  usefulness_score Float
+  kanji            Kanji[] // This creates the relation
+}
+
+model User {
+  id        String         @id
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  progress  UserProgress[]
+  Session   Session[]
+}
+
+model Session {
+  id      String   @id
+  userId  String // References User.id
+  expires DateTime
+  user    User     @relation(fields: [userId], references: [id])
+}
+
+model UserProgress {
+  id           Int      @id @default(autoincrement())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  kanjiId      Int
+  kanji        Kanji    @relation(fields: [kanjiId], references: [id])
+  masteryLevel Int      @default(0) // 0=unseen, 1=learning, 2=known
+  lastStudied  DateTime @updatedAt
+  createdAt    DateTime @default(now())
+
+  @@unique([userId, kanjiId])
+}

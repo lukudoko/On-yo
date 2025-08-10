@@ -1,26 +1,41 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@plugin '../hero.js';
+@source '../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
+@custom-variant dark (&:is(.dark *));
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+
+
+
+
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Make font variables available globally, including in modals */
+:root {
+  --font-noto: 'Noto Sans JP', sans-serif;
+  --font-jp: 'Mochiy Pop One', sans-serif;
+  --font-jp-round: 'M PLUS Rounded 1c', sans-serif;
+}
+
+/* Apply default font */
+body {
+  font-family: var(--font-noto), sans-serif;
+}
+
+/* Font utility classes */
+.font-noto {
+  font-family: var(--font-noto), sans-serif;
+}
+
+.font-jp {
+  font-family: var(--font-jp), sans-serif;
+}
+
+.font-jp-round {
+  font-family: var(--font-jp-round), sans-serif;
 }
