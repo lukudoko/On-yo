@@ -8,8 +8,8 @@ datasource db {
 }
 
 model Kanji {
-  id               Int            @id @default(autoincrement())
-  character        String         @unique
+  id               Int           @id @default(autoincrement())
+  character        String        @unique
   strokes          Int
   grade            Int?
   freq             Int?
@@ -19,8 +19,9 @@ model Kanji {
   readings_kun     String[]
   primary_onyomi   String?
   usefulness_score Float
-  onyomiGroup      OnyomiGroup?   @relation(fields: [primary_onyomi], references: [reading])
-  progress         UserProgress[] // Add this line for the reverse relation
+  onyomiGroup      OnyomiGroup?  @relation(fields: [primary_onyomi], references: [reading])
+  progress         UserProgress[]
+  exampleWords     ExampleWord[] // Add this line
 }
 
 model OnyomiGroup {
@@ -56,4 +57,16 @@ model UserProgress {
   createdAt    DateTime @default(now())
 
   @@unique([userId, kanjiId])
+}
+
+
+model ExampleWord {
+  id        Int      @id @default(autoincrement())
+  word      String   @unique
+  reading   String
+  meaning   String
+  kanji     Kanji    @relation(fields: [kanjiId], references: [id])
+  kanjiId   Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

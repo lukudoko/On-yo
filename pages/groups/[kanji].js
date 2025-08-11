@@ -8,9 +8,8 @@ export async function getServerSideProps({ params, req, res }) {
     const onyomi = params.kanji;
     const userId = await getUserId(req, res);
 
-    // Parallel queries for better performance
     const [groupKanji, masteryLevels] = await Promise.all([
-      // Get kanji data
+
       prisma.kanji.findMany({
         where: {
           primary_onyomi: onyomi
@@ -24,10 +23,19 @@ export async function getServerSideProps({ params, req, res }) {
           readings_on: true,
           readings_kun: true,
           freq: true,
-          jlpt_new: true
+          jlpt_new: true,
+
+          exampleWords: {
+            select: {
+              word: true,
+              reading: true,
+              meaning: true
+            },
+            take: 5
+          }
         }
       }),
-      // Get mastery levels server-side for better UX
+
       userId ? (async () => {
         const kanjiInGroup = await prisma.kanji.findMany({
           where: { primary_onyomi: onyomi },
@@ -38,21 +46,20 @@ export async function getServerSideProps({ params, req, res }) {
       })() : null
     ]);
 
-    // Return 404 if group doesn't exist
     if (!groupKanji || groupKanji.length === 0) {
       return {
         notFound: true,
       };
     }
 
-    // Transform kanji data
     const transformedKanji = groupKanji.map(kanji => ({
       kanji: kanji.character,
       meanings: kanji.meanings,
       readings_on: kanji.readings_on,
       readings_kun: kanji.readings_kun,
       freq_score: kanji.freq,
-      jlpt_new: kanji.jlpt_new
+      jlpt_new: kanji.jlpt_new,
+      exampleWords: kanji.exampleWords || []
     }));
 
     return {
@@ -77,10 +84,8 @@ export default function KanjiGroupPage({ groupKanji, onyomi, initialMasteryLevel
   useEffect(() => {
     window.scrollTo(0, 0);
 
-    // Only fetch mastery levels client-side if we don't have them server-side
-    // This happens when the user is not logged in initially but logs in during the session
     const shouldFetchClientSide = Object.keys(initialMasteryLevels).length === 0;
-    
+
     if (shouldFetchClientSide && groupKanji?.length) {
       setLoading(true);
       fetchAllMasteryLevels();
@@ -106,7 +111,7 @@ export default function KanjiGroupPage({ groupKanji, onyomi, initialMasteryLevel
         setMasteryLevels(result.data || {});
       } else {
         console.error('Failed to fetch mastery levels:', result.error);
-        // Set default levels
+
         const defaultLevels = {};
         groupKanji.forEach(item => {
           defaultLevels[item.kanji] = 0;
@@ -115,7 +120,7 @@ export default function KanjiGroupPage({ groupKanji, onyomi, initialMasteryLevel
       }
     } catch (error) {
       console.error('Error fetching mastery levels:', error);
-      // Set default levels
+
       const defaultLevels = {};
       groupKanji.forEach(item => {
         defaultLevels[item.kanji] = 0;
@@ -133,15 +138,15 @@ export default function KanjiGroupPage({ groupKanji, onyomi, initialMasteryLevel
     }));
   };
 
-  // Calculate progress stats
   const totalKanji = groupKanji.length;
   const masteredCount = Object.values(masteryLevels).filter(level => level === 2).length;
   const learningCount = Object.values(masteryLevels).filter(level => level === 1).length;
   const progressPercentage = totalKanji > 0 ? Math.round((masteredCount / totalKanji) * 100) : 0;
 
+  console.log(groupKanji)
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      {/* Header with progress */}
+      { }
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Onyomi Group: {onyomi}</h1>
         <div className="flex items-center gap-4 text-sm text-gray-600">
@@ -156,7 +161,7 @@ export default function KanjiGroupPage({ groupKanji, onyomi, initialMasteryLevel
       </div>
 
       {loading ? (
-        // Loading skeleton
+
         <div className="grid mx-auto max-w-md md:max-w-4xl grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {groupKanji.map((_, index) => (
             <div
@@ -170,7 +175,7 @@ export default function KanjiGroupPage({ groupKanji, onyomi, initialMasteryLevel
           ))}
         </div>
       ) : (
-        // Kanji cards
+
         <div className="grid mx-auto max-w-md md:max-w-4xl grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {groupKanji.map((kanji) => (
             <KanjiCard
@@ -183,6 +188,7 @@ export default function KanjiGroupPage({ groupKanji, onyomi, initialMasteryLevel
               jlpt_new={kanji.jlpt_new}
               initialMasteryLevel={masteryLevels[kanji.kanji] || 0}
               onMasteryUpdate={handleMasteryUpdate}
+              exampleWords={kanji.exampleWords || []}
             />
           ))}
         </div>

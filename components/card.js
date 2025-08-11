@@ -1,3 +1,4 @@
+// components/card.js
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Modal, ModalContent, ModalHeader, ModalBody, Button, ModalFooter, useDisclosure } from '@heroui/react';
@@ -10,7 +11,8 @@ const KanjiCard = ({
   jlpt_new,
   freq_score,
   initialMasteryLevel = 0,
-  onMasteryUpdate
+  onMasteryUpdate,
+  exampleWords = [] // Add exampleWords prop
 }) => {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [masteryLevel, setMasteryLevel] = useState(initialMasteryLevel);
@@ -92,7 +94,6 @@ const KanjiCard = ({
 
   return (
     <>
-      { }
       <motion.div
         className="flex border-4 aspect-square flex-col bg-white p-4 rounded-3xl cursor-pointer h-full relative"
         whileHover={{ scale: 1.02 }}
@@ -100,7 +101,6 @@ const KanjiCard = ({
         onClick={onOpen}
         transition={{ type: "spring", stiffness: 400, damping: 25 }}
       >
-        { }
         <div className="absolute top-3 left-3">
           <div
             className={`w-3 h-3 rounded-full ${masteryInfo.color}`}
@@ -117,8 +117,6 @@ const KanjiCard = ({
           </p>
         </div>
       </motion.div>
-
-      { }
       <Modal
         isOpen={isOpen}
         onOpenChange={onOpenChange}
@@ -162,7 +160,6 @@ const KanjiCard = ({
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                { }
                 <div className="text-center">
                   <div className="text-8xl font-jp-round mb-4">{kanji}</div>
                   <div className="flex justify-center pb-2 gap-3">
@@ -187,33 +184,60 @@ const KanjiCard = ({
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1, duration: 0.3 }}
                 >
-                  { }
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div className="bg-gray-50 rounded-2xl p-4">
-                      <h3 className="text-gray-500 font-semibold mb-3 text-sm uppercase tracking-wide">Onyomi</h3>
+                    <div className="bg-stone-50 rounded-2xl p-4">
+                      <h3 className="text-gray-500 font-semibold mb-3 text-sm  tracking-wide">Onyomi</h3>
                       <div className="font-noto text-xl font-semibold flex flex-wrap gap-2">
                         {formatReadings(readings_on)}
                       </div>
                     </div>
 
-                    <div className="bg-gray-50 rounded-2xl p-4">
-                      <h3 className="text-gray-500 font-semibold mb-3 text-sm uppercase tracking-wide">Kunyomi</h3>
+                    <div className="bg-stone-50  rounded-2xl p-4">
+                      <h3 className="text-gray-500 font-semibold mb-3 text-sm  tracking-wide">Kunyomi</h3>
                       <div className="font-noto text-xl font-semibold flex flex-wrap gap-2">
                         {formatReadings(readings_kun)}
                       </div>
                     </div>
                   </div>
 
-                  <div className="bg-gray-50 rounded-2xl p-4 mb-6">
-                    <h3 className="text-gray-500 font-semibold mb-3 text-sm uppercase tracking-wide">Meanings</h3>
+                  <div className="bg-stone-50 rounded-2xl p-4 mb-6">
+                    <h3 className="text-gray-500 font-semibold mb-3 text-sm tracking-wide">Meanings</h3>
                     <p className="text-black font-semibold text-sm">
                       {meanings.join(', ')}
                     </p>
                   </div>
+                  {exampleWords && exampleWords.length > 0 && (
+                    <div className="bg-stone-50 rounded-2xl p-4 mb-6">
+                      <h3 className="text-gray-500 font-semibold mb-3 text-sm tracking-wide">Example Words</h3>
+                      <div className="space-y-3">
+                        {exampleWords.map((word, index) => {
+                          let displayMeaning = word.meaning;
+                          if (displayMeaning.includes(';')) {
+                            const parts = displayMeaning.split(';').map(part => part.trim());
+                            displayMeaning = parts.slice(0, 3).join(', ');
+                            if (parts.length > 3) {
+                              displayMeaning += ''
+                            }
+                          } else if (displayMeaning.length > 100) {
+                            displayMeaning = displayMeaning.substring(0, 100);
+                          }
 
-
+                          return (
+                            <div key={index} className="border-b border-gray-200 last:border-0 last:pb-0 pb-3">
+                              <div className="flex items-baseline gap-2">
+                                <p className="font-noto text-lg font-semibold">{word.word}</p>
+                                <p className="text-gray-600 text-sm">({word.reading})</p>
+                              </div>
+                              <p className="text-gray-700 text-sm capitalize mt-1">{displayMeaning}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </motion.div>
               </ModalBody>
+
               <ModalFooter className='justify-center'>
                 <div className="flex justify-center gap-4">
                   <Button
