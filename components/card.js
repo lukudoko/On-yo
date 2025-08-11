@@ -85,7 +85,7 @@ const KanjiCard = ({
       default:
         return {
           color: 'bg-red-500',
-          title: "Don't Know",
+          title: "Don&apos;t Know",
         };
     }
   };
@@ -265,7 +265,7 @@ const KanjiCard = ({
                     isDisabled={isUpdating || masteryLevel === 0}
                     isLoading={isUpdating && masteryLevel === 0}
                   >
-                    Don't Know
+                    Don&apos;t Know
                   </Button>
                 </div>
               </ModalFooter>

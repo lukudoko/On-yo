@@ -108,7 +108,7 @@ export default function Home({ dashboardData }) {
               {progress.learning} Learning
             </Chip>
             <Chip size="sm" className='text-white bg-red-500' variant="flat">
-              Don't Know {progress.unlearned}
+              Don&apos;t Know {progress.unlearned}
             </Chip>
           </div>
 
@@ -132,7 +132,7 @@ export default function Home({ dashboardData }) {
           )}
         </Card>
         <Card className="p-4 border-4 rounded-3xl border-black text-center">
-          I'll add stuff here later
+          I&apos;ll add stuff here later
         </Card>
         <Card className="p-6  border-4 rounded-3xl border-black ">
           <h3 className="text-xl font-semibold mb-4 text-gray-800">Onyomi Groups</h3>

@@ -43,7 +43,7 @@ export default function Header() {
   return (
     <div className="fixed bg-[#f6eee3] md:bg-transparent z-50 flex w-full items-center justify-between top-0 py-4 px-8">
       <Link href="/">
-        <p className="text-3xl font-jp font-bold w-12">On' yo!</p>
+        <p className="text-3xl font-jp font-bold w-12">On&apos; yo!</p>
       </Link>
 
       {status === "authenticated" ? (

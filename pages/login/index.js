@@ -23,7 +23,7 @@ export default function SignIn({ providers }) {
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="p-8 max-w-md w-full">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2">Welcome to <p className='font-jp'>On'yo</p>!</h1>
+          <h1 className="text-3xl font-bold mb-2">Welcome to <p className='font-jp'>On&apos;yo</p>!</h1>
           {status === 'authenticated' ? (
             <p className="text-gray-600">You are currently signed in</p>
           ) : (

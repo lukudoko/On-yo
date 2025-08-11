@@ -44,7 +44,7 @@ export default function Home({ initialKanji, onyomiGroups }) {
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-jp font-bold mb-4">On'yo!</h1>
+      <h1 className="text-2xl font-jp font-bold mb-4">On&apos;yo!</h1>
 
       {/* Dropdown for onyomi groups */}
       <div className="mb-4">
