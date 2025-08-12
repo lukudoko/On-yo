@@ -85,7 +85,7 @@ const KanjiCard = ({
       default:
         return {
           color: 'bg-red-500',
-          title: "Don&apos;t Know",
+          title: "Don't Know",
         };
     }
   };

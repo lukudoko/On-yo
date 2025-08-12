@@ -44,8 +44,7 @@ export const authOptions = {
       }
     }
   },
-  // Don't use the adapter - handle storage ourselves
-  // adapter: PrismaAdapter(prisma), // REMOVE this line
+
   pages: {
     signIn: '/auth/signin',
   },

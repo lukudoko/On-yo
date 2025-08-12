@@ -1,74 +1,41 @@
-import { useEffect } from 'react';
-import { prisma } from '@/lib/prisma';
+import { useEffect, useState } from 'react';
 import OnyomiGroupCard from '@/components/onyomigroupcards';
-import { ProgressService, getUserId } from '@/utils/progress';
 
-export async function getServerSideProps(context) {
-  const { req, res } = context;
-
-  try {
-
-    const userId = await getUserId(req, res);
-
-    const [onyomiGroupsData, progressByOnyomi] = await Promise.all([
-
-      prisma.onyomiGroup.findMany({
-        orderBy: {
-          usefulness_score: 'desc'
-        },
-        select: {
-          reading: true,
-          usefulness_score: true,
-          _count: {
-            select: {
-              kanji: true
-            }
-          }
-        }
-      }),
-
-      ProgressService.getAllOnyomiGroupsProgress(userId)
-    ]);
-
-    const onyomiGroupsWithProgress = onyomiGroupsData.map(group => {
-      const totalKanji = group._count.kanji;
-      const progress = progressByOnyomi.get(group.reading) || {
-        mastered: 0,
-        learning: 0,
-        unlearned: 0
-      };
-
-      const calculatedUnlearned = totalKanji - progress.mastered - progress.learning;
-
-      return {
-        reading: group.reading,
-        usefulness_score: group.usefulness_score,
-        mastered: progress.mastered,
-        learning: progress.learning,
-        unlearned: Math.max(0, calculatedUnlearned),
-        total: totalKanji
-      };
-    });
-
-    return {
-      props: {
-        onyomiGroups: onyomiGroupsWithProgress,
-      }
-    };
-  } catch (error) {
-    console.error('Error in stats getServerSideProps:', error);
-
-    return {
-      props: {
-        onyomiGroups: [],
-      }
-    };
-  }
+export async function getServerSideProps() {
+  return {
+    props: {},
+  };
 }
 
-export default function StatisticsPage({ onyomiGroups }) {
-  useEffect(() => {
+export default function StatisticsPage() {
+  const [onyomiGroups, setOnyomiGroups] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  useEffect(() => {
+    const fetchGroups = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/progress/groups');
+        const json = await response.json();
+        
+        if (json.success) {
+          setOnyomiGroups(json.data);
+        } else {
+          setError(json.error);
+        }
+      } catch (err) {
+        setError('Failed to load groups');
+        console.error('Error fetching groups:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGroups();
+  }, []);
+
+  useEffect(() => {
     if ('scrollRestoration' in window.history) {
       window.history.scrollRestoration = 'manual';
     }
@@ -79,6 +46,31 @@ export default function StatisticsPage({ onyomiGroups }) {
       }
     };
   }, []);
+
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="max-w-5xl mx-auto">
+          <div className="h-8 bg-gray-200 rounded w-64 animate-pulse mb-8"></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[...Array(8)].map((_, index) => (
+              <div key={index} className="h-48 bg-gray-200 rounded animate-pulse"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 max-w-5xl mx-auto">
+        <div className="text-center py-10">
+          <p className="text-red-500">Error loading groups: {error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">

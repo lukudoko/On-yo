@@ -1,16 +1,48 @@
-import Link from 'next/link';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/router';
+import Link from 'next/link';
 import { Button, Progress, Card, Chip } from '@heroui/react';
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { enIE } from 'date-fns/locale';
-import { getDashboardData } from '@/utils/dashboard';
 
-export default function Home({ dashboardData }) {
+export default function Home() {
   const { data: session, status } = useSession();
+  const router = useRouter();
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  
+  useEffect(() => {
+const fetchDashboardData = async () => {
+  try {
+    setLoading(true);
+    const response = await fetch('/api/dashboard?type=full', {
+      headers: {
+        'X-API-Token': process.env.NEXT_PUBLIC_API_TOKEN || 'fallback-token-for-dev'
+      }
+    });
+    const json = await response.json();
+    
+    if (json.success) {
+      setDashboardData(json.data);
+    } else {
+      if (response.status === 401) {
+        router.push('/auth/signin');
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching dashboard data:', error);
+  } finally {
+    setLoading(false);
+  }
+};
 
-  if (status === 'loading') {
+    if (status === 'authenticated') {
+      fetchDashboardData();
+    }
+  }, [status, router]);
+
+  if (status === 'loading' || loading) {
     return (
       <div className="p-6 max-w-5xl mx-auto">
         <div className="text-center py-10">
@@ -25,19 +57,15 @@ export default function Home({ dashboardData }) {
       <div className="p-6 max-w-5xl mx-auto">
         <div className="text-center py-10">
           <p>Unable to load dashboard data. Please try signing in again.</p>
-          { }
         </div>
       </div>
     );
   }
 
-
-
   const { progress, nextGroup, stats, recentActivity, weeklyStats } = dashboardData;
 
   const formatRelativeTime = (dateString) => {
     if (!dateString) return 'N/A';
-
     try {
       const date = parseISO(dateString);
       return formatDistanceToNow(date, {
@@ -61,9 +89,7 @@ export default function Home({ dashboardData }) {
         ) : (
           <div></div>
         )}
-
       </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <Card className="p-6 border-4 rounded-3xl border-black">
           <h3 className="text-xl font-semibold mb-4 text-gray-800">Jump back in!</h3>
@@ -78,11 +104,9 @@ export default function Home({ dashboardData }) {
             >
               Start Learning
             </Button>
-
           </div>
         </Card>
-
-        <Card className="p-6  border-4 rounded-3xl border-black ">
+        <Card className="p-6 border-4 rounded-3xl border-black">
           <h3 className="text-xl font-semibold mb-4 text-gray-800">Kanji Progress</h3>
           <div className="mb-2">
             <span className="text-2xl font-bold text-blue-600">{progress.mastered}</span>
@@ -99,7 +123,6 @@ export default function Home({ dashboardData }) {
             {Math.round((progress.mastered / Math.max(progress.total, 1)) * 100)}% complete
           </p>
 
-          { }
           <div className="flex gap-2 mt-3">
             <Chip size="sm" className="text-white bg-green-500" variant="flat">
               {progress.mastered} Mastered
@@ -111,7 +134,6 @@ export default function Home({ dashboardData }) {
               Don&apos;t Know {progress.unlearned}
             </Chip>
           </div>
-
 
           {weeklyStats && (
             <div className="mt-4 p-3 bg-gray-50 rounded-lg text-xs">
@@ -131,10 +153,12 @@ export default function Home({ dashboardData }) {
             </div>
           )}
         </Card>
+
         <Card className="p-4 border-4 rounded-3xl border-black text-center">
           I&apos;ll add stuff here later
         </Card>
-        <Card className="p-6  border-4 rounded-3xl border-black ">
+
+        <Card className="p-6 border-4 rounded-3xl border-black">
           <h3 className="text-xl font-semibold mb-4 text-gray-800">Onyomi Groups</h3>
           <div className="mb-2">
             <span className="text-2xl font-bold text-green-600">{stats.completedGroups}</span>
@@ -151,7 +175,6 @@ export default function Home({ dashboardData }) {
             {Math.round((stats.completedGroups / Math.max(stats.totalGroups, 1)) * 100)}% complete
           </p>
 
-          { }
           <div className="flex gap-2 mt-3">
             <Chip size="sm" color="primary" variant="flat">
               Total: {stats.totalGroups}
@@ -163,7 +186,6 @@ export default function Home({ dashboardData }) {
         </Card>
       </div>
 
-      { }
       {recentActivity && recentActivity.length > 0 && (
         <div className="mb-8">
           <Card className="p-6 border-4 rounded-3xl border-black">
@@ -183,8 +205,8 @@ export default function Home({ dashboardData }) {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${activity.masteryLevel === 2 ? 'bg-green-100 text-green-800' :
-                      activity.masteryLevel === 1 ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
+                        activity.masteryLevel === 1 ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-red-100 text-red-800'
                       }`}>
                       {activity.masteryLevel === 2 ? 'Mastered' :
                         activity.masteryLevel === 1 ? 'Learning' : 'Review'}
@@ -200,7 +222,6 @@ export default function Home({ dashboardData }) {
         </div>
       )}
 
-      { }
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Link href="/stat" className="block">
           <Card className="p-6 hover:shadow-md transition-shadow duration-200 cursor-pointer h-full">
@@ -222,36 +243,3 @@ export default function Home({ dashboardData }) {
   );
 }
 
-export async function getServerSideProps(context) {
-  const { req, res } = context;
-
-  try {
-
-    const dashboardData = await getDashboardData(req, res);
-
-    if (dashboardData === null) {
-
-      return {
-        redirect: {
-          destination: '/auth/signin',
-          permanent: false,
-        },
-      };
-    }
-
-    return {
-      props: {
-        dashboardData,
-      },
-    };
-  } catch (error) {
-
-    console.error('Unexpected error in dashboard getServerSideProps:', error);
-
-    return {
-      props: {
-        dashboardData: null,
-      },
-    };
-  }
-}

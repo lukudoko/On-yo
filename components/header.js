@@ -20,7 +20,11 @@ export default function Header() {
   const fetchStats = async () => {
     setLoadingStats(true);
     try {
-      const response = await fetch("/api/progress/overview?type=overall");
+       const response = await fetch("/api/dashboard?type=header", {
+      headers: {
+        'X-API-Token': process.env.NEXT_PUBLIC_API_TOKEN || 'fallback-token-for-dev'
+      }
+    });
       const json = await response.json();
       if (json.success) {
         setStats(json.data);
@@ -89,7 +93,7 @@ export default function Header() {
               <div className="space-y-3 w-full">
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="text-lg font-bold text-blue-600">{stats.mastered}<span className="text-sm font-normal text-gray-500">/{stats.total}</span></p>
+                    <p className="text-lg font-bold text-blue-600">{stats.kanjiMastered}<span className="text-sm font-normal text-gray-500">/{stats.totalKanji}</span></p>
                     <p className="text-sm text-gray-500">Kanji Mastered</p>
                   </div>
                 </div>
@@ -97,7 +101,7 @@ export default function Header() {
                 <div className="flex justify-between items-center">
                   <div>
                     <p className="text-sm text-gray-500">Groups Completed</p>
-                    <p className="text-lg font-bold text-green-600">{stats.completedGroups}<span className="text-sm font-normal text-gray-500">/{stats.totalGroups}</span></p>
+                    <p className="text-lg font-bold text-green-600">{stats.groupsCompleted}<span className="text-sm font-normal text-gray-500">/{stats.totalGroups}</span></p>
                   </div>
                 </div>
               </div>
