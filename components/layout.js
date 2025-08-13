@@ -6,6 +6,7 @@ export default function Layout({ children }) {
     <>
       <Head>
         <title>On&apos;yo!</title>
+        <meta name="theme-color" content="#f6eee3" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
       </Head>
       <Header />
