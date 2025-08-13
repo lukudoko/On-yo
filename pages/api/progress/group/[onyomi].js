@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { onyomi } = req.query;
+    const { onyomi, jlpt } = req.query;
     
     if (!onyomi) {
       return res.status(400).json({ 
@@ -18,14 +18,26 @@ export default async function handler(req, res) {
 
     const userId = await getUserId(req, res);
 
+    // Build where clause
+    const whereClause = {
+      primary_onyomi: onyomi
+    };
+
+    // Add JLPT filter if specified
+    if (jlpt) {
+      const jlptNum = parseInt(jlpt.replace('N', ''));
+      if (!isNaN(jlptNum) && [1, 2, 3, 4, 5].includes(jlptNum)) {
+        whereClause.jlpt_new = jlptNum;
+      }
+    }
+
     // Get group kanji data
     const groupKanji = await prisma.kanji.findMany({
-      where: {
-        primary_onyomi: onyomi
-      },
-      orderBy: {
-        freq: 'asc'
-      },
+      where: whereClause,
+      orderBy: [
+        { jlpt_new: 'desc' }, // N5 first
+        { freq: 'asc' }       // Then by frequency
+      ],
       select: {
         character: true,
         meanings: true,
@@ -70,10 +82,11 @@ export default async function handler(req, res) {
 
     res.status(200).json({
       success: true,
-      data: {
+       data: {
         groupKanji: transformedKanji,
         onyomi: onyomi,
-        masteryLevels: masteryLevels
+        masteryLevels: masteryLevels,
+        jlptFilter: jlpt || null
       }
     });
 

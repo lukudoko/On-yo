@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
 import KanjiCard from '@/components/card';
 
-export async function getServerSideProps({ params }) {
+export async function getServerSideProps({ params, query }) {
   try {
     const onyomi = params.kanji;
+    const { jlpt } = query; // Get JLPT filter from query params
     
-    // No direct imports needed - everything comes from API
     return {
       props: {
         onyomi: onyomi,
+        initialJlptFilter: jlpt || null, // Pass initial JLPT filter
       },
     };
   } catch (error) {
@@ -19,16 +20,26 @@ export async function getServerSideProps({ params }) {
   }
 }
 
-export default function KanjiGroupPage({ onyomi }) {
+export default function KanjiGroupPage({ onyomi, initialJlptFilter }) {
   const [groupData, setGroupData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Fetch data once on mount
   useEffect(() => {
     const fetchGroupData = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/progress/group/${onyomi}`);
+        
+        // Build API URL with JLPT filter
+        const params = new URLSearchParams();
+        if (initialJlptFilter) {
+          params.append('jlpt', initialJlptFilter);
+        }
+        
+        const apiUrl = `/api/progress/group/${onyomi}${params.toString() ? `?${params.toString()}` : ''}`;
+        
+        const response = await fetch(apiUrl);
         const json = await response.json();
         
         if (json.success) {
@@ -38,7 +49,7 @@ export default function KanjiGroupPage({ onyomi }) {
         }
       } catch (err) {
         setError('Failed to load group data');
-        console.error('Error fetching group data:', err);
+        console.error('Error fetching group ', err);
       } finally {
         setLoading(false);
       }
@@ -47,7 +58,7 @@ export default function KanjiGroupPage({ onyomi }) {
     if (onyomi) {
       fetchGroupData();
     }
-  }, [onyomi]);
+  }, [onyomi, initialJlptFilter]); // Dependencies are now stable
 
   const handleMasteryUpdate = (kanji, newLevel) => {
     setGroupData(prev => ({
@@ -68,10 +79,7 @@ export default function KanjiGroupPage({ onyomi }) {
         </div>
         <div className="grid mx-auto max-w-md md:max-w-4xl grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, index) => (
-            <div key={index} className="flex flex-col aspect-square justify-between p-5 h-full border-4 rounded-3xl bg-white animate-pulse">
-              <div className="flex flex-1 justify-center items-center mb-4">
-                <div className="h-28 w-32 bg-gray-200 rounded"></div>
-              </div>
+            <div key={index} className="flex flex-col aspect-square justify-between p-5 h-full rounded-3xl bg-gray-200 animate-pulse">
             </div>
           ))}
         </div>
@@ -83,7 +91,7 @@ export default function KanjiGroupPage({ onyomi }) {
     return (
       <div className="p-6 max-w-5xl mx-auto">
         <div className="text-center py-10">
-          <p className="text-red-500">Error loading group data: {error || 'Not found'}</p>
+          <p className="text-red-500">Error loading group  {error || 'Not found'}</p>
         </div>
       </div>
     );
@@ -99,6 +107,7 @@ export default function KanjiGroupPage({ onyomi }) {
     <div className="p-6 max-w-5xl mx-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Onyomi Group: {onyomi}</h1>
+        
         <div className="flex items-center gap-4 text-sm text-gray-600">
           <span>{totalKanji} kanji total</span>
           <span>•</span>

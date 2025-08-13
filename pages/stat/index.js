@@ -18,7 +18,7 @@ export default function StatisticsPage() {
         setLoading(true);
         const response = await fetch('/api/progress/groups');
         const json = await response.json();
-        
+
         if (json.success) {
           setOnyomiGroups(json.data);
         } else {
@@ -51,10 +51,11 @@ export default function StatisticsPage() {
     return (
       <div className="p-6">
         <div className="max-w-5xl mx-auto">
-          <div className="h-8 bg-gray-200 rounded w-64 animate-pulse mb-8"></div>
+          <div className="h-10 bg-gray-200 rounded w-96 animate-pulse mb-2"></div>
+          <div className="h-6 bg-gray-200 rounded w-2xl animate-pulse mb-8"></div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {[...Array(8)].map((_, index) => (
-              <div key={index} className="h-48 bg-gray-200 rounded animate-pulse"></div>
+              <div key={index} className="h-60 bg-gray-200 aspect-square rounded-3xl animate-pulse" />
             ))}
           </div>
         </div>
@@ -75,9 +76,9 @@ export default function StatisticsPage() {
   return (
     <div className="p-6">
       <div className="max-w-5xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8 text-gray-800">Study by Usefulness</h1>
+        <h1 className="text-4xl font-bold mb-2">Study by Usefulness</h1>
         <p className="text-gray-600 mb-8">
-          Follow the most statistically useful kanji groups first. Groups are ordered by their 
+          Follow the most statistically useful kanji groups first. Groups are ordered by their
           frequency of use in modern Japanese.
         </p>
 

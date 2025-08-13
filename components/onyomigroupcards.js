@@ -1,4 +1,3 @@
-// components/OnyomiGroupCard.js
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 
@@ -8,19 +7,17 @@ export default function OnyomiGroupCard({
   mastered = 0, 
   learning = 0, 
   unlearned = 0,
-  showProgress = false 
+  showProgress = false,
+  kanjiCount = null, // For JLPT page
+  jlptLevel = null
 }) {
   const totalKanji = mastered + learning + unlearned;
   const hasProgressData = totalKanji > 0;
 
   return (
     <Link 
-      href={`/groups/${onyomi}`} 
+      href={jlptLevel ? `/groups/${onyomi}?jlpt=${jlptLevel}` : `/groups/${onyomi}`}
       scroll={false}
-      onClick={(e) => {
-        // Optional: Log usefulness score on click for debugging
-        console.log(`Onyomi: ${onyomi}, Usefulness: ${usefulness_score}`);
-      }}
     >
       <motion.div
         initial="initial"
@@ -29,14 +26,24 @@ export default function OnyomiGroupCard({
           initial: { scale: 1 },
           hover: { scale: 1.02 }
         }}
-        className="flex flex-col aspect-square justify-between p-5 h-full border-4 rounded-3xl bg-white cursor-pointer shadow-sm hover:shadow-md transition-all duration-200"
+        className="flex flex-col aspect-square justify-between p-5 h-full border-4 rounded-3xl bg-white cursor-pointer shadow-sm hover:shadow-md transition-all duration-200 relative"
       >
+        {/* Kanji count circle in top-right corner */}
+        {kanjiCount !== null && (
+          <div className="absolute top-3 right-3">
+            <div className="flex items-center justify-center font-bold bg-black text-white w-8 h-8 text-xs rounded-full">
+              {kanjiCount}
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-1 flex-col items-center justify-center">
           <span className="font-jp-round text-6xl font-black text-gray-800 mb-2">{onyomi}</span>
         </div>
 
         <div className="w-full">
-          {hasProgressData && showProgress ? (
+          {/* Show progress bar only for stats page */}
+          {showProgress && hasProgressData ? (
             <motion.div 
               className="overflow-hidden rounded-full"
               variants={{
@@ -100,26 +107,10 @@ export default function OnyomiGroupCard({
               </div>
             </motion.div>
           ) : (
-            <div className="h-1 rounded-full bg-gray-200 overflow-hidden">
-              {hasProgressData ? (
-                <div className="flex h-full w-full">
-                  <div 
-                    className="bg-green-500"
-                    style={{ width: `${(mastered / totalKanji) * 100}%` }}
-                  ></div>
-                  <div 
-                    className="bg-yellow-500"
-                    style={{ width: `${(learning / totalKanji) * 100}%` }}
-                  ></div>
-                  <div 
-                    className="bg-red-500"
-                    style={{ width: `${(unlearned / totalKanji) * 100}%` }}
-                  ></div>
-                </div>
-              ) : (
-                <div className="bg-gray-200 w-full h-full"></div>
-              )}
-            </div>
+            // No progress bar for JLPT page - just empty space or subtle indicator
+            showProgress ? (
+              <div className="h-1 rounded-full bg-gray-200"></div>
+            ) : null
           )}
         </div>
       </motion.div>

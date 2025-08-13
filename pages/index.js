@@ -80,7 +80,6 @@ const fetchDashboardData = async () => {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      { }
       <div className="mb-6">
         {status === 'authenticated' ? (
           <p className="text-3xl font-bold">
