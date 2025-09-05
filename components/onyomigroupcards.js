@@ -37,7 +37,7 @@ export default function OnyomiGroupCard({
         )}
 
         <div className="flex flex-1 flex-col items-center justify-center">
-          <span className="font-jp-round text-6xl font-black text-gray-800 mb-2">{onyomi}</span>
+          <span className="font-jp-round text-6xl md:5xl lg:6xl text-center font-black text-gray-800 mb-2">{onyomi}</span>
         </div>
 
         <div className="w-full">
