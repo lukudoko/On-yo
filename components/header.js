@@ -20,11 +20,11 @@ export default function Header() {
   const fetchStats = async () => {
     setLoadingStats(true);
     try {
-       const response = await fetch("/api/dashboard?type=header", {
-      headers: {
-        'X-API-Token': process.env.NEXT_PUBLIC_API_TOKEN || 'fallback-token-for-dev'
-      }
-    });
+      const response = await fetch("/api/stats?type=header", {
+        headers: {
+          'X-API-Token': process.env.NEXT_PUBLIC_API_TOKEN || 'fallback-token-for-dev'
+        }
+      });
       const json = await response.json();
       if (json.success) {
         setStats(json.data);
@@ -45,7 +45,7 @@ export default function Header() {
   };
 
   return (
-    <div className="fixed bg-[#f6eee3] md:bg-transparent z-50 flex w-full items-center justify-between top-0 py-4 px-8">
+    <div className="fixed bg-[#f6eee3] xl:bg-transparent z-50 flex w-full items-center justify-between top-0 py-4 px-8">
       <Link href="/">
         <p className="text-3xl font-jp font-bold w-12">On&apos; yo!</p>
       </Link>
@@ -65,8 +65,7 @@ export default function Header() {
           </PopoverTrigger>
 
           <PopoverContent className="p-4 w-64 rounded-3xl border border-3 border-black shadow-lg bg-white">
-            {/* User info */}
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center gap-3">
               <div className="h-10 relative aspect-square">
                 <Image
                   src={session.user.image || "/jblog.webp"}
@@ -84,7 +83,6 @@ export default function Header() {
 
             <Divider className="my-3" />
 
-            {/* Stats */}
             {loadingStats ? (
               <div className="flex justify-center py-4">
                 <Spinner size="sm" />
@@ -97,7 +95,7 @@ export default function Header() {
                     <p className="text-sm text-gray-500">Kanji Mastered</p>
                   </div>
                 </div>
-                
+
                 <div className="flex justify-between items-center">
                   <div>
                     <p className="text-sm text-gray-500">Groups Completed</p>
@@ -110,14 +108,12 @@ export default function Header() {
             )}
 
             <Divider className="my-3" />
-
-            {/* Logout button */}
             <Button
               size="sm"
               color="danger"
               variant="flat"
               onPress={() => signOut()}
-              className="mt-2 w-full font-medium"
+              className="w-full font-medium"
             >
               Log out
             </Button>

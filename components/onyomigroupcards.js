@@ -28,7 +28,6 @@ export default function OnyomiGroupCard({
         }}
         className="flex flex-col aspect-square justify-between p-5 h-full border-4 rounded-3xl bg-white cursor-pointer shadow-sm hover:shadow-md transition-all duration-200 relative"
       >
-        {/* Kanji count circle in top-right corner */}
         {kanjiCount !== null && (
           <div className="absolute top-3 right-3">
             <div className="flex items-center justify-center font-bold bg-black text-white w-8 h-8 text-xs rounded-full">
@@ -42,7 +41,6 @@ export default function OnyomiGroupCard({
         </div>
 
         <div className="w-full">
-          {/* Show progress bar only for stats page */}
           {showProgress && hasProgressData ? (
             <motion.div 
               className="overflow-hidden rounded-full"

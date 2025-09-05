@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react';
 import KanjiCard from '@/components/card';
+import { Chip } from '@heroui/react';
+import { HiBookOpen, HiCheckCircle } from "react-icons/hi2";
 
 export async function getServerSideProps({ params, query }) {
   try {
     const onyomi = params.kanji;
-    const { jlpt } = query; // Get JLPT filter from query params
-    
+    const { jlpt } = query; 
+
     return {
       props: {
         onyomi: onyomi,
-        initialJlptFilter: jlpt || null, // Pass initial JLPT filter
+        initialJlptFilter: jlpt || null, 
       },
     };
   } catch (error) {
@@ -25,23 +27,21 @@ export default function KanjiGroupPage({ onyomi, initialJlptFilter }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch data once on mount
   useEffect(() => {
     const fetchGroupData = async () => {
       try {
         setLoading(true);
-        
-        // Build API URL with JLPT filter
+
         const params = new URLSearchParams();
         if (initialJlptFilter) {
           params.append('jlpt', initialJlptFilter);
         }
-        
-        const apiUrl = `/api/progress/group/${onyomi}${params.toString() ? `?${params.toString()}` : ''}`;
-        
+
+        const apiUrl = `/api/progress/${onyomi}${params.toString() ? `?${params.toString()}` : ''}`;
+
         const response = await fetch(apiUrl);
         const json = await response.json();
-        
+
         if (json.success) {
           setGroupData(json.data);
         } else {
@@ -58,7 +58,7 @@ export default function KanjiGroupPage({ onyomi, initialJlptFilter }) {
     if (onyomi) {
       fetchGroupData();
     }
-  }, [onyomi, initialJlptFilter]); // Dependencies are now stable
+  }, [onyomi, initialJlptFilter]); 
 
   const handleMasteryUpdate = (kanji, newLevel) => {
     setGroupData(prev => ({
@@ -106,16 +106,40 @@ export default function KanjiGroupPage({ onyomi, initialJlptFilter }) {
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Onyomi Group: {onyomi}</h1>
-        
-        <div className="flex items-center gap-4 text-sm text-gray-600">
-          <span>{totalKanji} kanji total</span>
-          <span>•</span>
-          <span className="text-green-600">{masteredCount} mastered</span>
-          <span>•</span>
-          <span className="text-yellow-600">{learningCount} learning</span>
-          <span>•</span>
-          <span className="font-medium">{progressPercentage}% complete</span>
+        <h1 className="text-5xl font-black mb-2">{onyomi}</h1>
+
+        <div className="flex items-center gap-4 mt-6 text-sm text-gray-600">
+
+          <Chip
+            classNames={{
+              content: "text-white font-bold",
+            }}
+            className='bg-indigo-500 text-bold'>
+            {totalKanji} 字
+          </Chip>
+          <Chip
+            classNames={{
+              base: "pl-2",
+              content: "text-white font-bold",
+            }}
+            startContent={<HiCheckCircle color="white" />} className='bg-green-500 text-bold'>
+            {masteredCount}
+          </Chip>
+          <Chip
+            classNames={{
+              base: "pl-2",
+              content: "text-white font-bold",
+            }}
+            startContent={<HiBookOpen color="white" />} className='bg-yellow-500 text-bold'>
+            {learningCount}
+          </Chip>
+          <Chip
+            classNames={{
+              content: "text-white font-bold",
+            }}
+            className='bg-cyan-500 text-bold'>
+            {progressPercentage}%
+          </Chip>
         </div>
       </div>
 

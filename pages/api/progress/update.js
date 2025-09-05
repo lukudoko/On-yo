@@ -1,5 +1,5 @@
 import { ProgressService, getUserId } from '@/utils/progress';
-import { invalidateUserCache } from '@/pages/api/dashboard'; // Make sure this path is correct
+import { invalidateUserCache } from '@/pages/api/stats';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
     }
 
     const userId = await getUserId(req, res);
-    
+
     if (!userId) {
       return res.status(401).json({
         success: false,
@@ -33,24 +33,23 @@ export default async function handler(req, res) {
     }
 
     const result = await ProgressService.updateKanjiMastery(userId, kanji, masteryLevel);
-    
-    // Invalidate user's cached dashboard data
+
     try {
       invalidateUserCache(userId);
       console.log(`Cache invalidated for user ${userId}`);
     } catch (cacheError) {
       console.error('Error invalidating cache:', cacheError);
-      // Don't fail the request if cache invalidation fails
+
     }
-    
+
     res.status(200).json({ success: true, result });
   } catch (error) {
     console.error('API Error in update progress:', error);
-    
+
     if (error.message.includes('not found')) {
       return res.status(404).json({ success: false, error: error.message });
     }
-    
+
     res.status(500).json({ success: false, error: 'Internal server error' });
   }
 }

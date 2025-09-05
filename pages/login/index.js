@@ -20,8 +20,8 @@ export default function SignIn({ providers }) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className="p-8 max-w-md w-full">
+    <div className="fixed top-0 left-0 right-0 bottom-0 flex items-center justify-center p-4">
+      <Card className="p-8 rounded-3xl border-4 max-w-md w-full">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-2">Welcome to <p className='font-jp'>On&apos;yo</p>!</h1>
           {status === 'authenticated' ? (
@@ -32,7 +32,6 @@ export default function SignIn({ providers }) {
         </div>
 
         {status === 'authenticated' ? (
-          // User is signed in - show sign out option
           <div className="space-y-4">
             <p className="text-center">
               Signed in as <span className="font-semibold">{session.user?.name || session.user?.email || 'User'}</span>
@@ -92,7 +91,7 @@ export default function SignIn({ providers }) {
 export async function getServerSideProps(context) {
   const providers = await getProviders();
   return {
-    props: { 
+    props: {
       providers: providers || {}
     },
   };

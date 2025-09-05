@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { Button, Progress, Card, Chip } from '@heroui/react';
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { enIE } from 'date-fns/locale';
+import { HiBookOpen, HiCheckCircle, HiQuestionMarkCircle } from "react-icons/hi2";
+
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -13,29 +15,29 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-const fetchDashboardData = async () => {
-  try {
-    setLoading(true);
-    const response = await fetch('/api/dashboard?type=full', {
-      headers: {
-        'X-API-Token': process.env.NEXT_PUBLIC_API_TOKEN || 'fallback-token-for-dev'
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/stats?type=full', {
+          headers: {
+            'X-API-Token': process.env.NEXT_PUBLIC_API_TOKEN || 'fallback-token-for-dev'
+          }
+        });
+        const json = await response.json();
+
+        if (json.success) {
+          setDashboardData(json.data);
+        } else {
+          if (response.status === 401) {
+            router.push('/auth/signin');
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setLoading(false);
       }
-    });
-    const json = await response.json();
-    
-    if (json.success) {
-      setDashboardData(json.data);
-    } else {
-      if (response.status === 401) {
-        router.push('/auth/signin');
-      }
-    }
-  } catch (error) {
-    console.error('Error fetching dashboard data:', error);
-  } finally {
-    setLoading(false);
-  }
-};
+    };
 
     if (status === 'authenticated') {
       fetchDashboardData();
@@ -44,9 +46,11 @@ const fetchDashboardData = async () => {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="p-6 max-w-5xl mx-auto">
-        <div className="text-center py-10">
-          <p>Loading dashboard...</p>
+      <div className="fixed inset-0 flex items-center justify-center p-6">
+        <div className="max-w-5xl w-full">
+          <div className="text-8xl animate-pulse font-jp-round text-center py-10">
+            <p>音読</p>
+          </div>
         </div>
       </div>
     );
@@ -123,14 +127,30 @@ const fetchDashboardData = async () => {
           </p>
 
           <div className="flex gap-2 mt-3">
-            <Chip size="sm" className="text-white bg-green-500" variant="flat">
-              {progress.mastered} Mastered
+            <Chip
+              classNames={{
+                base: "pl-2",
+                content: "text-white font-bold",
+              }}
+              startContent={<HiCheckCircle color="white" />} className='bg-green-500 text-bold'>
+              {progress.mastered}
             </Chip>
-            <Chip size="sm" className="text-white bg-yellow-500" variant="flat">
-              {progress.learning} Learning
+
+            <Chip
+              classNames={{
+                base: "pl-2",
+                content: "text-white font-bold",
+              }}
+              startContent={<HiBookOpen color="white" />} className='bg-yellow-500 text-bold'>
+              {progress.learning}
             </Chip>
-            <Chip size="sm" className='text-white bg-red-500' variant="flat">
-              Don&apos;t Know {progress.unlearned}
+            <Chip
+              classNames={{
+                base: "pl-2",
+                content: "text-white font-bold",
+              }}
+              startContent={<HiQuestionMarkCircle color="white" />} className='bg-red-500 text-bold'>
+              {progress.unlearned}
             </Chip>
           </div>
 
@@ -175,11 +195,21 @@ const fetchDashboardData = async () => {
           </p>
 
           <div className="flex gap-2 mt-3">
-            <Chip size="sm" color="primary" variant="flat">
+            <Chip
+              classNames={{
+                base: "bg-indigo-500",
+                content: "text-white font-bold",
+              }}
+
+              variant="flat">
               Total: {stats.totalGroups}
             </Chip>
-            <Chip size="sm" color="secondary" variant="flat">
-              In Progress: {stats.inProgressGroups}
+            <Chip classNames={{
+              base: "bg-violet-300",
+              content: "text-white font-bold",
+            }}
+              variant="flat">
+              {stats.inProgressGroups} in progress
             </Chip>
           </div>
         </Card>
@@ -203,14 +233,20 @@ const fetchDashboardData = async () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${activity.masteryLevel === 2 ? 'bg-green-100 text-green-800' :
-                        activity.masteryLevel === 1 ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                      }`}>
+                    <Chip
+                      classNames={{
+                        base: ` ${activity.masteryLevel === 2 ? 'bg-green-500' :
+                          activity.masteryLevel === 1 ? 'bg-yellow-500' :
+                            'bg-red-500'
+                          }`,
+                        content: "text-white text-xs font-bold",
+                      }}>
+
+
                       {activity.masteryLevel === 2 ? 'Mastered' :
                         activity.masteryLevel === 1 ? 'Learning' : 'Review'}
-                    </span>
-                    <span className="text-xs text-gray-500">
+                    </Chip>
+                    <span className="text-xs font-bold text-gray-500">
                       {activity.lastStudied ? formatRelativeTime(activity.lastStudied) : 'N/A'}
                     </span>
                   </div>

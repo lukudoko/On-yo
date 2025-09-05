@@ -16,7 +16,7 @@ export default function StatisticsPage() {
     const fetchGroups = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/progress/groups');
+        const response = await fetch('/api/groups/stat');
         const json = await response.json();
 
         if (json.success) {

@@ -1,7 +1,8 @@
 // components/card.js
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Modal, ModalContent, ModalHeader, ModalBody, Button, ModalFooter, useDisclosure } from '@heroui/react';
+import { Modal, Chip, ModalContent, ModalHeader, ModalBody, Button, ModalFooter, useDisclosure } from '@heroui/react';
+import { HiBookOpen, HiCheckCircle, HiQuestionMarkCircle } from "react-icons/hi2";
 
 const KanjiCard = ({
   kanji,
@@ -164,16 +165,29 @@ const KanjiCard = ({
                   <div className="text-8xl font-jp-round mb-4">{kanji}</div>
                   <div className="flex justify-center pb-2 gap-3">
                     {freq_score && (
-                      <span className="text-sm bg-blue-100 font-bold text-blue-800 px-3 py-1 rounded-full">
-                        #{freq_score}
-                      </span>
+
+
+                      <Chip
+                        classNames={{
+                          base: "bg-blue-500",
+                          content: "font-bold text-white",
+                        }}
+                      > #{freq_score}</Chip>
                     )}
-                    <span className="text-sm bg-black font-bold text-white px-3 py-1 rounded-full">
-                      JLPT N{jlpt_new}
-                    </span>
-                    <span className={`px-3 py-1 ${masteryInfo.color} text-white text-sm rounded-full font-medium`}>
-                      {masteryInfo.title}
-                    </span>
+
+                    <Chip
+                      classNames={{
+                        base: "bg-black",
+                        content: "font-bold text-white",
+                      }}
+                    > JLPT N{jlpt_new}</Chip>
+                    <Chip
+                      classNames={{
+                        base: `${masteryInfo.color}`,
+                        content: "font-medium text-white",
+                      }}
+                    >   {masteryInfo.title}</Chip>
+
                   </div>
                 </div>
               </ModalHeader>
@@ -243,6 +257,7 @@ const KanjiCard = ({
                   <Button
                     className="font-medium bg-green-500 text-white"
                     onPress={() => handleMasteryUpdate(2)}
+                    startContent={<HiCheckCircle size={18} />}
                     size="sm"
                     isDisabled={isUpdating || masteryLevel === 2}
                     isLoading={isUpdating && masteryLevel === 2}
@@ -252,6 +267,7 @@ const KanjiCard = ({
                   <Button
                     className="font-medium bg-yellow-500 text-white"
                     onPress={() => handleMasteryUpdate(1)}
+                    startContent={<HiBookOpen size={18} />}
                     size="sm"
                     isDisabled={isUpdating || masteryLevel === 1}
                     isLoading={isUpdating && masteryLevel === 1}
@@ -261,6 +277,7 @@ const KanjiCard = ({
                   <Button
                     className="font-medium bg-red-500 text-white"
                     onPress={() => handleMasteryUpdate(0)}
+                    startContent={<HiQuestionMarkCircle size={18} />}
                     size="sm"
                     isDisabled={isUpdating || masteryLevel === 0}
                     isLoading={isUpdating && masteryLevel === 0}
