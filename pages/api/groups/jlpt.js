@@ -52,6 +52,7 @@ export default async function handler(req, res) {
       }
     });
 
+
     const progressMap = new Map();
     userProgress.forEach(progress => {
 

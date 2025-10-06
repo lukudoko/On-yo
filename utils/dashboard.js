@@ -1,110 +1,10 @@
 import { prisma } from '@/lib/prisma';
 import { ProgressService, getUserId } from '@/utils/progress';
 import { getGroupStats } from '@/utils/groupstats';
-
-export async function findIntelligentNextGroup(userId) {
-  if (!userId) {
-    console.error("findIntelligentNextGroup called without userId");
-    return null;
-  }
-
-  try {
-
-    const allGroups = await prisma.onyomiGroup.findMany({
-      select: {
-        reading: true,
-        usefulness_score: true,
-        _count: {
-          select: {
-            kanji: true
-          }
-        }
-      }
-    });
-
-    const userProgress = await prisma.UserProgress.findMany({
-      where: {
-        userId: userId
-      },
-      select: {
-        kanjiId: true,
-        masteryLevel: true,
-        kanji: {
-          select: {
-            primary_onyomi: true
-          }
-        }
-      }
-    });
-
-    const progressByGroup = new Map();
-    userProgress.forEach(progress => {
-      const group = progress.kanji?.primary_onyomi;
-      if (!group) return;
-
-      if (!progressByGroup.has(group)) {
-        progressByGroup.set(group, { mastered: 0, learning: 0 });
-      }
-
-      const stats = progressByGroup.get(group);
-      if (progress.masteryLevel === 2) stats.mastered++;
-      else if (progress.masteryLevel === 1) stats.learning++;
-
-    });
-
-    let bestGroup = null;
-    let bestPriorityScore = -1;
-
-    for (const group of allGroups) {
-      const totalKanji = group._count.kanji;
-
-      if (totalKanji === 0) continue;
-
-      const progress = progressByGroup.get(group.reading) || {
-        mastered: 0,
-        learning: 0
-      };
-
-      const actualUnlearned = totalKanji - progress.mastered - progress.learning;
-
-      const totalPoints = (progress.mastered * 2) + (progress.learning * 1) + (actualUnlearned * 0);
-      const maxPossiblePoints = totalKanji * 2;
-
-      const normalizedScore = maxPossiblePoints > 0
-        ? (totalPoints / maxPossiblePoints) * 100
-        : 0;
-
-      let priorityScore;
-      if (normalizedScore >= 95) {
-
-        priorityScore = 0;
-      } else {
-
-        priorityScore = (normalizedScore * 10) + (group.usefulness_score * 0.1);
-      }
-
-      if (priorityScore > bestPriorityScore) {
-        bestPriorityScore = priorityScore;
-        bestGroup = {
-          reading: group.reading,
-          usefulness_score: group.usefulness_score,
-          priority_score: priorityScore
-        };
-      }
-    }
-
-    return bestGroup;
-
-  } catch (error) {
-    console.error("Error in findIntelligentNextGroup:", error);
-
-    return null;
-  }
-}
+import { findIntelligentNextGroup } from '@/utils/recommendation';
 
 export async function getDashboardData(req, res) {
   try {
-
     const userId = await getUserId(req, res);
 
     if (!userId) {
@@ -131,11 +31,8 @@ export async function getDashboardData(req, res) {
     const nextGroupToUse = intelligentNextGroup || { reading: 'にち', usefulness_score: 100 };
 
     return {
-
       progress: progress,
-
       nextGroup: nextGroupToUse,
-
       stats: {
         totalKanji: progress.total,
         masteredKanji: progress.mastered,
@@ -143,19 +40,17 @@ export async function getDashboardData(req, res) {
         completedGroups: groupStats.completedGroups,
         inProgressGroups: groupStats.inProgressGroups
       },
-
       recentActivity: recentActivity,
       weeklyStats: weeklyStats
     };
 
   } catch (error) {
-
     console.error("Error in getDashboardData utility:", error);
-
     return null;
   }
 }
 
+// Keep your helper functions in this file
 async function getRecentActivity(userId, limit = 5) {
   if (!userId) return [];
 

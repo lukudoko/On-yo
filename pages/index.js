@@ -1,28 +1,51 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
-import Link from 'next/link';
-import { Button, Progress, Card, Chip } from '@heroui/react';
+import { Button, CircularProgress, Chip, Modal, useDisclosure, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/react';
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { enIE } from 'date-fns/locale';
 import { HiBookOpen, HiCheckCircle, HiQuestionMarkCircle } from "react-icons/hi2";
 
+const getMasteryColors = (level) => {
+  const colors = {
+    2: { bg: 'bg-green-400', text: 'text-green-900', label: 'Mastered' },
+    1: { bg: 'bg-yellow-400', text: 'text-yellow-900', label: 'Learning' },
+    0: { bg: 'bg-red-400', text: 'text-red-900', label: 'Review' }
+  };
+  return colors[level] || colors[0];
+};
+
+const formatRelativeTime = (dateString) => {
+  if (!dateString) return 'N/A';
+  try {
+    return formatDistanceToNow(parseISO(dateString), {
+      addSuffix: true,
+      locale: enIE
+    });
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return 'N/A';
+  }
+};
+
+const apiHeaders = {
+  'Content-Type': 'application/json',
+  'X-API-Token': process.env.NEXT_PUBLIC_API_TOKEN
+};
 
 export default function Home() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [dashboardData, setDashboardData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const [changingTrack, setChangingTrack] = useState(false);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        setLoading(true);
-        const response = await fetch('/api/stats?type=full', {
-          headers: {
-            'X-API-Token': process.env.NEXT_PUBLIC_API_TOKEN || 'fallback-token-for-dev'
-          }
-        });
+        setError(null);
+        const response = await fetch('/api/stats', { headers: apiHeaders });
         const json = await response.json();
 
         if (json.success) {
@@ -30,12 +53,13 @@ export default function Home() {
         } else {
           if (response.status === 401) {
             router.push('/auth/signin');
+          } else {
+            setError('Failed to load dashboard data');
           }
         }
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
-      } finally {
-        setLoading(false);
+        setError('Unable to connect to server');
       }
     };
 
@@ -44,7 +68,33 @@ export default function Home() {
     }
   }, [status, router]);
 
-  if (status === 'loading' || loading) {
+  const changeTrack = async (newTrack) => {
+    setChangingTrack(true);
+    try {
+      const response = await fetch('/api/stats', {
+        method: 'PUT',
+        headers: apiHeaders,
+        body: JSON.stringify({ track: newTrack })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setDashboardData(prev => ({ ...prev, track: data.track }));
+        onOpenChange(false);
+      } else {
+        console.error('Error updating track:', data.error);
+        setError('Failed to update track');
+      }
+    } catch (error) {
+      console.error('Error updating track:', error);
+      setError('Failed to update track');
+    } finally {
+      setChangingTrack(false);
+    }
+  };
+
+  if (status === 'loading' || (status === 'authenticated' && !dashboardData && !error)) {
     return (
       <div className="fixed inset-0 flex items-center justify-center p-6">
         <div className="max-w-5xl w-full">
@@ -56,225 +106,258 @@ export default function Home() {
     );
   }
 
-  if (!dashboardData) {
+  if (error || !dashboardData) {
     return (
       <div className="p-6 max-w-5xl mx-auto">
         <div className="text-center py-10">
-          <p>Unable to load dashboard data. Please try signing in again.</p>
+          <p className="text-red-600 mb-4">{error || 'Unable to load dashboard data.'}</p>
+          <Button
+            color="primary"
+            onPress={() => window.location.reload()}
+          >
+            Retry
+          </Button>
         </div>
       </div>
     );
   }
 
-  const { progress, nextGroup, stats, recentActivity, weeklyStats } = dashboardData;
-
-  const formatRelativeTime = (dateString) => {
-    if (!dateString) return 'N/A';
-    try {
-      const date = parseISO(dateString);
-      return formatDistanceToNow(date, {
-        addSuffix: true,
-        locale: enIE
-      });
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return 'N/A';
-    }
-  };
+  const { progress, nextGroup, stats, recentActivity, weeklyStats, track } = dashboardData;
+  const completionPercentage = Math.round((progress.mastered / Math.max(progress.total, 1)) * 100);
+  const groupsPercentage = Math.round((stats.completedGroups / Math.max(stats.totalGroups, 1)) * 100);
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
+
       <div className="mb-6">
-        {status === 'authenticated' ? (
-          <p className="text-3xl font-bold">
-            Hi {session?.user?.name?.replace(/\s*\([^)]*\)$/, '').trim() || ''}!
+        {session?.user?.name && (
+          <p className="text-2xl font-bold">
+            Hi {session.user.name.replace(/\s*\([^)]*\)$/, '').trim()}!
           </p>
-        ) : (
-          <div></div>
         )}
       </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <Card className="p-6 border-4 rounded-3xl border-black">
-          <h3 className="text-xl font-semibold mb-4 text-gray-800">Jump back in!</h3>
-          <div className='flex flex-1 flex-col justify-center items-center'>
-            <p className="text-6xl font-jp-round font-bold mb-4">{nextGroup.reading}</p>
+
+        <div className="flex px-6 py-8 col-span-1 row-span-1 flex-col shadow-sm justify-center items-center bg-white h-fit rounded-3xl">
+          <p className="text-[5.25rem] font-bold font-jp-round mb-2">{nextGroup.reading}</p>
+          <Button
+            as="a"
+            href={`/groups/${nextGroup.reading}`}
+            size="sm"
+            className="font-medium text-slate-900 bg-indigo-100"
+          >
+            Continue Learning
+          </Button>
+        </div>
+
+
+        <div className="flex p-6 flex-col col-span-1 shadow-sm row-span-2 bg-white rounded-3xl">
+          <p className="text-2xl font-bold mb-4">Stats</p>
+          <div className="flex flex-1 items-center justify-around">
+
+            <div className="flex flex-col items-center justify-center">
+              <CircularProgress
+                aria-label="Kanji progress"
+                size="lg"
+                value={completionPercentage}
+                color="primary"
+                showValueLabel={true}
+                classNames={{
+                  svg: "w-28 h-28",
+                  indicator: "stroke-indigo-400",
+                  track: "stroke-indigo-400/10",
+                  value: "text-xl font-bold text-indigo-600",
+                  base: "mb-2"
+                }}
+                strokeWidth={4}
+              />
+              <div className="mb-2">
+                <span className="text-xl font-bold text-indigo-600">{progress.mastered}</span>
+                <span className="text-xs"> / {progress.total} kanji</span>
+              </div>
+            </div>
+
+
+            <div className="flex flex-col items-center justify-center">
+              <CircularProgress
+                aria-label="Groups progress"
+                size="lg"
+                value={groupsPercentage}
+                color="success"
+                showValueLabel={true}
+                classNames={{
+                  svg: "w-28 h-28",
+                  indicator: "stroke-cyan-400",
+                  track: "stroke-cyan-400/10",
+                  value: "text-lg font-bold text-cyan-600",
+                  base: "mb-2"
+                }}
+                strokeWidth={4}
+              />
+              <div className="mb-1">
+                <span className="text-xl font-bold text-cyan-600">{stats.completedGroups}</span>
+                <span className="text-xs"> / {stats.totalGroups} groups</span>
+              </div>
+              <span className="text-xs mb-2">{stats.inProgressGroups} in progress</span>
+            </div>
+          </div>
+
+
+          <div className="grid grid-cols-3 md:gap-4 lg-gap-6 gap-2 mt-3">
+            <div className="flex bg-green-400 justify-center gap-x-1 items-center p-2 rounded-2xl">
+              <HiCheckCircle className="fill-green-900" />
+              <span className="text-base lg:text-lg font-bold text-green-900">{progress.mastered}</span>
+            </div>
+            <div className="flex bg-yellow-400 justify-center gap-x-1 items-center p-2 rounded-2xl">
+              <HiBookOpen className="fill-yellow-900" />
+              <span className="text-base lg:text-lg font-bold text-yellow-900">{progress.learning}</span>
+            </div>
+            <div className="flex bg-red-400 justify-center gap-x-1 items-center p-2 rounded-2xl">
+              <HiQuestionMarkCircle className="fill-red-900" />
+              <span className="text-base lg:text-lg font-bold text-red-900">{progress.unlearned}</span>
+            </div>
+          </div>
+        </div>
+
+
+        <div className="flex p-6 flex-col col-span-1 shadow-sm bg-white row-span-1 rounded-3xl">
+          <p className="text-2xl font-bold mb-4">{track === 'stat' ? 'Stats' : 'JLPT'} Track</p>
+          <div className="flex justify-around">
             <Button
               as="a"
-              href={`/groups/${nextGroup.reading}`}
-              color="primary"
-              size="lg"
-              className="font-medium"
+              href="/study"
+              size="sm"
+              className="font-medium text-slate-900 bg-indigo-100"
             >
-              Start Learning
+              View All Kanji Groups
+            </Button>
+            <Button
+              onPress={onOpen}
+              color="primary"
+              size="sm"
+              className="font-medium text-slate-900 bg-indigo-100"
+            >
+              Change Track
             </Button>
           </div>
-        </Card>
-        <Card className="p-6 border-4 rounded-3xl border-black">
-          <h3 className="text-xl font-semibold mb-4 text-gray-800">Kanji Progress</h3>
-          <div className="mb-2">
-            <span className="text-2xl font-bold text-blue-600">{progress.mastered}</span>
-            <span className="text-gray-600"> / {progress.total} kanji</span>
-          </div>
-          <Progress
-            aria-label="Kanji progress"
-            size="lg"
-            value={Math.round((progress.mastered / Math.max(progress.total, 1)) * 100)}
-            color="primary"
-            className="mb-2"
-          />
-          <p className="text-sm text-gray-500">
-            {Math.round((progress.mastered / Math.max(progress.total, 1)) * 100)}% complete
-          </p>
+        </div>
 
-          <div className="flex gap-2 mt-3">
-            <Chip
-              classNames={{
-                base: "pl-2",
-                content: "text-white font-bold",
-              }}
-              startContent={<HiCheckCircle color="white" />} className='bg-green-500 text-bold'>
-              {progress.mastered}
-            </Chip>
 
-            <Chip
-              classNames={{
-                base: "pl-2",
-                content: "text-white font-bold",
-              }}
-              startContent={<HiBookOpen color="white" />} className='bg-yellow-500 text-bold'>
-              {progress.learning}
-            </Chip>
-            <Chip
-              classNames={{
-                base: "pl-2",
-                content: "text-white font-bold",
-              }}
-              startContent={<HiQuestionMarkCircle color="white" />} className='bg-red-500 text-bold'>
-              {progress.unlearned}
-            </Chip>
-          </div>
+        {recentActivity?.length > 0 && (
+          <div className="flex p-6 flex-col md:col-span-2 shadow-sm bg-white row-span-2 h-fit mb-8 rounded-3xl">
+            <p className="text-2xl font-bold mb-4">Recent Activity</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-3">
+              {recentActivity.map((activity) => {
+                const colors = getMasteryColors(activity.masteryLevel);
+                return (
+                  <div
+                    key={`${activity.kanji}-${activity.lastStudied}`}
+                    className="flex bg-slate-100 rounded-xl items-center justify-between py-2 px-4"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl font-jp-round">{activity.kanji}</span>
+                      <div>
+                        <p className="text-xs">{activity.onyomi} group</p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
+                      <Chip
+                        size="sm"
+                        classNames={{
+                          base: colors.bg,
+                          content: `${colors.text} text-[0.675rem] font-bold`,
+                        }}
+                      >
+                        {colors.label}
+                      </Chip>
+                      <span className="text-[0.675rem] max-w-20 text-right font-semibold">
+                        {formatRelativeTime(activity.lastStudied)}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
 
-          {weeklyStats && (
-            <div className="mt-4 p-3 bg-gray-50 rounded-lg text-xs">
-              <div className="flex justify-between">
-                <span className="text-gray-600">This week:</span>
-                <span className="font-semibold text-blue-600">{weeklyStats.thisWeek} kanji</span>
-              </div>
-              <div className="flex justify-between mt-1">
-                <span className="text-gray-600">Last week:</span>
-                <span className="font-semibold text-gray-600">{weeklyStats.lastWeek} kanji</span>
-              </div>
-              {weeklyStats.thisWeek > weeklyStats.lastWeek && (
-                <div className="mt-1 text-green-600 font-medium text-center">
-                  ↑ {Math.round(((weeklyStats.thisWeek - weeklyStats.lastWeek) / Math.max(weeklyStats.lastWeek, 1)) * 100)}% improvement!
+
+              {weeklyStats && (
+                <div className="flex justify-center flex-col py-2 px-4 bg-slate-100  rounded-xl text-xs">
+                  <div className="flex justify-between">
+                    <span className="font-bold">This week:</span>
+                    <span className="font-semibold text-indigo-600">{weeklyStats.thisWeek} kanji</span>
+                  </div>
+                  <div className="flex justify-between mt-1">
+                    <span className="font-bold text-gray-600">Last week:</span>
+                    <span className="font-semibold text-gray-600">{weeklyStats.lastWeek} kanji</span>
+                  </div>
+                  {weeklyStats.thisWeek > weeklyStats.lastWeek && (
+                    <div className="mt-1 text-green-600 font-medium text-center">
+                      ↑ {Math.round(((weeklyStats.thisWeek - weeklyStats.lastWeek) / Math.max(weeklyStats.lastWeek, 1)) * 100)}% improvement!
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-          )}
-        </Card>
-
-        <Card className="p-4 border-4 rounded-3xl border-black text-center">
-          I&apos;ll add stuff here later
-        </Card>
-
-        <Card className="p-6 border-4 rounded-3xl border-black">
-          <h3 className="text-xl font-semibold mb-4 text-gray-800">Onyomi Groups</h3>
-          <div className="mb-2">
-            <span className="text-2xl font-bold text-green-600">{stats.completedGroups}</span>
-            <span className="text-gray-600"> / {stats.totalGroups} groups</span>
           </div>
-          <Progress
-            aria-label="Groups progress"
-            size="lg"
-            value={Math.round((stats.completedGroups / Math.max(stats.totalGroups, 1)) * 100)}
-            color="success"
-            className="mb-2"
-          />
-          <p className="text-sm text-gray-500">
-            {Math.round((stats.completedGroups / Math.max(stats.totalGroups, 1)) * 100)}% complete
-          </p>
-
-          <div className="flex gap-2 mt-3">
-            <Chip
-              classNames={{
-                base: "bg-indigo-500",
-                content: "text-white font-bold",
-              }}
-
-              variant="flat">
-              Total: {stats.totalGroups}
-            </Chip>
-            <Chip classNames={{
-              base: "bg-violet-300",
-              content: "text-white font-bold",
-            }}
-              variant="flat">
-              {stats.inProgressGroups} in progress
-            </Chip>
-          </div>
-        </Card>
+        )}
       </div>
 
-      {recentActivity && recentActivity.length > 0 && (
-        <div className="mb-8">
-          <Card className="p-6 border-4 rounded-3xl border-black">
-            <h3 className="text-xl font-semibold mb-4 text-gray-800">Recent Activity</h3>
-            <div className="space-y-3">
-              {recentActivity.map((activity, index) => (
-                <div
-                  key={`${activity.kanji}-${activity.lastStudied}`}
-                  className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl font-jp-round">{activity.kanji}</span>
-                    <div>
-                      <p className="font-medium text-sm">{activity.kanji}</p>
-                      <p className="text-xs text-gray-500">{activity.onyomi} group</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Chip
-                      classNames={{
-                        base: ` ${activity.masteryLevel === 2 ? 'bg-green-500' :
-                          activity.masteryLevel === 1 ? 'bg-yellow-500' :
-                            'bg-red-500'
-                          }`,
-                        content: "text-white text-xs font-bold",
-                      }}>
 
+      <Modal
+        isOpen={isOpen}
+        scrollBehavior="inside"
+        classNames={{
+          base: "rounded-3xl border-0",
+          header: "border-b-0 pb-2",
+          body: "pt-0",
+          closeButton: "text-2xl text-black hover:bg-default-100",
+          backdrop: "bg-white/40",
+        }}
+        onOpenChange={onOpenChange}
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">Change Learning Track</ModalHeader>
+              <ModalBody>
+                <p>Switch between following a more statistically oriented track, or one which more closely follows the JLPT</p>
+                <p>Stats explainer</p>
+                <p>JLPT explainer</p>
+                <div className="mt-4">
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      variant={track === 'stat' ? 'solid' : 'bordered'}
+                      onPress={() => changeTrack('stat')}
+                      isLoading={changingTrack && track !== 'stat'}
+                      isDisabled={changingTrack || track === 'stat'}
+                    className="font-semibold text-indigo-800 "
 
-                      {activity.masteryLevel === 2 ? 'Mastered' :
-                        activity.masteryLevel === 1 ? 'Learning' : 'Review'}
-                    </Chip>
-                    <span className="text-xs font-bold text-gray-500">
-                      {activity.lastStudied ? formatRelativeTime(activity.lastStudied) : 'N/A'}
-                    </span>
+                    >
+                      Statistics-Based Track
+                    </Button>
+                    <Button
+                      color="primary"
+                      variant={track === 'jlpt' ? 'solid' : 'bordered'}
+                      onPress={() => changeTrack('jlpt')}
+                      isLoading={changingTrack && track !== 'jlpt'}
+                      isDisabled={changingTrack || track === 'jlpt'}
+                      className="font-semibold text-indigo-800 bg-indigo-100"
+
+                    >
+                      JLPT Track
+                    </Button>
                   </div>
                 </div>
-              ))}
-            </div>
-          </Card>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Link href="/stat" className="block">
-          <Card className="p-6 hover:shadow-md transition-shadow duration-200 cursor-pointer h-full">
-            <h3 className="text-xl font-semibold mb-2 text-gray-800">Study by Usefulness</h3>
-            <p className="text-gray-600 mb-4">Follow the most statistically useful kanji groups first</p>
-            <div className="text-blue-600 font-medium">View All Groups →</div>
-          </Card>
-        </Link>
-
-        <Link href="/jlpt" className="block">
-          <Card className="p-6 hover:shadow-md transition-shadow duration-200 cursor-pointer h-full">
-            <h3 className="text-xl font-semibold mb-2 text-gray-800">Study by JLPT Level</h3>
-            <p className="text-gray-600 mb-4">Progress through kanji organized by JLPT difficulty</p>
-            <div className="text-blue-600 font-medium">View JLPT Track →</div>
-          </Card>
-        </Link>
-      </div>
+              </ModalBody>
+              <ModalFooter>
+                <Button color="danger" variant="light" onPress={onClose}>
+                  Cancel
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
     </div>
   );
 }
-

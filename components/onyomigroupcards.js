@@ -26,18 +26,18 @@ export default function OnyomiGroupCard({
           initial: { scale: 1 },
           hover: { scale: 1.02 }
         }}
-        className="flex flex-col aspect-square justify-between p-5 h-full border-4 rounded-3xl bg-white cursor-pointer shadow-sm hover:shadow-md transition-all duration-200 relative"
+        className="flex flex-col aspect-square justify-between p-5 h-full rounded-3xl bg-white cursor-pointer shadow-sm hover:shadow-md transition-all duration-200 relative"
       >
         {kanjiCount !== null && (
           <div className="absolute top-3 right-3">
-            <div className="flex items-center justify-center font-bold bg-black text-white w-8 h-8 text-xs rounded-full">
+            <div className="flex items-center justify-center font-bold bg-gray-800  text-white w-6 aspect-square text-xs rounded-full">
               {kanjiCount}
             </div>
           </div>
         )}
 
         <div className="flex flex-1 flex-col items-center justify-center">
-          <span className="font-jp-round text-6xl md:5xl lg:6xl text-center font-black text-gray-800 mb-2">{onyomi}</span>
+          <span className="font-jp-round text-6xl md:5xl lg:6xl text-center font-black mb-2">{onyomi}</span>
         </div>
 
         <div className="w-full">
@@ -105,7 +105,6 @@ export default function OnyomiGroupCard({
               </div>
             </motion.div>
           ) : (
-            // No progress bar for JLPT page - just empty space or subtle indicator
             showProgress ? (
               <div className="h-1 rounded-full bg-gray-200"></div>
             ) : null

@@ -20,7 +20,7 @@ const jp = Mochiy_Pop_One({
 const jp2 = M_PLUS_Rounded_1c({
   subsets: ['japanese'],
   display: 'swap',
-  weight: ['800'],
+  weight: ['500','800',],
   variable: '--font-jp-round',
   preload: false,
 });

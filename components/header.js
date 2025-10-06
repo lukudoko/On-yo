@@ -22,7 +22,7 @@ export default function Header() {
     try {
       const response = await fetch("/api/stats?type=header", {
         headers: {
-          'X-API-Token': process.env.NEXT_PUBLIC_API_TOKEN || 'fallback-token-for-dev'
+          'X-API-Token': process.env.NEXT_PUBLIC_API_TOKEN
         }
       });
       const json = await response.json();
@@ -45,38 +45,38 @@ export default function Header() {
   };
 
   return (
-    <div className="fixed bg-[#f6eee3] xl:bg-transparent z-50 flex w-full items-center justify-between top-0 py-4 px-8">
+    <div className="fixed bg-[#f9f4ed] xl:bg-transparent z-50 flex w-full items-center justify-between top-0 py-3 px-8">
       <Link href="/">
-        <p className="text-3xl font-jp font-bold w-12">On&apos; yo!</p>
+        <p className="text-2xl font-jp font-bold w-12">On&apos; yo!</p>
       </Link>
 
       {status === "authenticated" ? (
         <Popover placement="bottom-end" isOpen={isOpen} onOpenChange={handleOpenChange}>
           <PopoverTrigger>
-            <div className="h-14 relative aspect-square cursor-pointer">
+            <div className="h-12 relative aspect-square  cursor-pointer">
               <Image
                 src={session.user.image || "/jblog.webp"}
                 alt="Profile Picture"
-                className="object-cover border-2 border-black rounded-full"
+                className="object-cover shadow-sm rounded-2xl"
                 fill
-                sizes="56px"
+                sizes="50px"
               />
             </div>
           </PopoverTrigger>
 
-          <PopoverContent className="p-4 w-64 rounded-3xl border border-3 border-black shadow-lg bg-white">
+          <PopoverContent className="p-4 w-64 rounded-3xl shadow-sm">
             <div className="flex items-center gap-3">
               <div className="h-10 relative aspect-square">
                 <Image
                   src={session.user.image || "/jblog.webp"}
                   alt="Profile Picture"
-                  className="object-cover border border-gray-300 rounded-full"
+                  className="object-cover border rounded-2xl"
                   fill
                   sizes="40px"
                 />
               </div>
               <div>
-                <p className="font-semibold text-gray-800">{session.user.name}</p>
+                <p className="text-lg font-bold">{session?.user?.name?.replace(/\s*\([^)]*\)$/, '').trim() || ''}</p>
                 <p className="text-xs text-gray-500">{session.user.email}</p>
               </div>
             </div>
@@ -88,26 +88,24 @@ export default function Header() {
                 <Spinner size="sm" />
               </div>
             ) : stats ? (
-              <div className="space-y-3 w-full">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-lg font-bold text-blue-600">{stats.kanjiMastered}<span className="text-sm font-normal text-gray-500">/{stats.totalKanji}</span></p>
-                    <p className="text-sm text-gray-500">Kanji Mastered</p>
-                  </div>
-                </div>
+              <div className="space-y-3 py-4 w-full">
+                <div className="flex mb-2 justify-between items-center">
+              <div>
+                <span className="text-xl font-bold text-indigo-600">{stats.kanjiMastered}</span>
+                <span className="text-xs"> / {stats.totalKanji} kanji</span>
+              </div>
 
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm text-gray-500">Groups Completed</p>
-                    <p className="text-lg font-bold text-green-600">{stats.groupsCompleted}<span className="text-sm font-normal text-gray-500">/{stats.totalGroups}</span></p>
-                  </div>
+        <div>
+                <span className="text-xl font-bold text-cyan-600">{stats.groupsCompleted}</span>
+                <span className="text-xs"> / {stats.totalGroups} groups</span>
+              </div>
                 </div>
               </div>
             ) : (
               <p className="text-gray-500 text-sm">No stats available</p>
             )}
 
-            <Divider className="my-3" />
+     
             <Button
               size="sm"
               color="danger"

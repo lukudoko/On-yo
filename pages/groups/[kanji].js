@@ -106,38 +106,38 @@ export default function KanjiGroupPage({ onyomi, initialJlptFilter }) {
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-5xl font-black mb-2">{onyomi}</h1>
+        <h1 className="text-5xl font-jp-round font-black mb-2">{onyomi}</h1>
 
         <div className="flex items-center gap-4 mt-6 text-sm text-gray-600">
 
           <Chip
             classNames={{
-              content: "text-white font-bold",
+              content: "text-indigo-900 font-bold",
             }}
-            className='bg-indigo-500 text-bold'>
+            className='bg-indigo-400 text-bold'>
             {totalKanji} 字
           </Chip>
           <Chip
             classNames={{
               base: "pl-2",
-              content: "text-white font-bold",
+              content: "text-green-900 font-bold",
             }}
-            startContent={<HiCheckCircle color="white" />} className='bg-green-500 text-bold'>
+            startContent={<HiCheckCircle className='fill-green-900' />} className='bg-green-400 text-bold'>
             {masteredCount}
           </Chip>
           <Chip
             classNames={{
               base: "pl-2",
-              content: "text-white font-bold",
+              content: "text-yellow-900 font-bold",
             }}
-            startContent={<HiBookOpen color="white" />} className='bg-yellow-500 text-bold'>
+            startContent={<HiBookOpen className='fill-yellow-900'/>} className='bg-yellow-400 text-bold'>
             {learningCount}
           </Chip>
           <Chip
             classNames={{
-              content: "text-white font-bold",
+              content: "text-cyan-900 font-bold",
             }}
-            className='bg-cyan-500 text-bold'>
+            className='bg-cyan-400 text-bold'>
             {progressPercentage}%
           </Chip>
         </div>
