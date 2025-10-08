@@ -12,6 +12,14 @@ export async function getDashboardData(req, res) {
       return null;
     }
 
+    // Fetch the user's track preference
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { track: true }
+    });
+
+    const userTrack = user?.track || 'stat'; // Default to 'stat' if not set
+
     const [
       progress,
       totalGroups,
@@ -22,13 +30,13 @@ export async function getDashboardData(req, res) {
     ] = await Promise.all([
       ProgressService.getOverallProgress(userId),
       prisma.onyomiGroup.count(),
-      findIntelligentNextGroup(userId),
+      findIntelligentNextGroup(userId, userTrack), // Use the user's track preference
       getGroupStats(userId),
       getRecentActivity(userId),
       getWeeklyStats(userId)
     ]);
 
-    const nextGroupToUse = intelligentNextGroup || { reading: 'にち', usefulness_score: 100 };
+    const nextGroupToUse = intelligentNextGroup;
 
     return {
       progress: progress,
