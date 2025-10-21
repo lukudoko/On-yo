@@ -36,7 +36,7 @@ export default async function handler(req, res) {
 
     try {
       invalidateUserCache(userId);
-      console.log(`Cache invalidated for user ${userId}`);
+      //console.log(`Cache invalidated for user ${userId}`);
     } catch (cacheError) {
       console.error('Error invalidating cache:', cacheError);
 

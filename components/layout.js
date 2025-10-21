@@ -1,4 +1,4 @@
-import Header from './header';
+import Header from '@/components/header';
 import Head from 'next/head';
 
 export default function Layout({ children }) {

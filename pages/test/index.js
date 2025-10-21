@@ -83,7 +83,7 @@ export default function KanjiTest() {
 
     // Update the streak in real-time (for now, just log it)
     try {
-      const response = await fetch('/api/test/update-Streak', {
+      const response = await fetch('/api/test/updateStreak', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

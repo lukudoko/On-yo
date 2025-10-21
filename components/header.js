@@ -1,24 +1,34 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
-import { Popover, PopoverTrigger, Divider, PopoverContent, Button, Spinner } from "@heroui/react";
+import { Popover, PopoverTrigger, PopoverContent, Button, Spinner } from "@heroui/react";
 
 export default function Header() {
   const { data: session, status } = useSession();
   const [stats, setStats] = useState(null);
   const [loadingStats, setLoadingStats] = useState(false);
-  const [isOpen, setIsOpen] = useState(false); // Track popover state
+  const [error, setError] = useState(null); 
+  const [isOpen, setIsOpen] = useState(false);
+  const previousIsOpenRef = useRef(isOpen); 
 
-  // Fetch stats when popover opens
   useEffect(() => {
-    if (isOpen && status === "authenticated" && !stats) {
+    if (status === "authenticated" && !stats && !loadingStats) {
       fetchStats();
     }
-  }, [isOpen, status, stats]);
+  }, [status, stats, loadingStats]);
+
+  useEffect(() => {
+    if (isOpen && !previousIsOpenRef.current && status === "authenticated") {
+      fetchStats();
+    }
+    previousIsOpenRef.current = isOpen;
+  }, [isOpen, status]);
 
   const fetchStats = async () => {
+    if (loadingStats) return;
     setLoadingStats(true);
+    setError(null);
     try {
       const response = await fetch("/api/stats?type=header", {
         headers: {
@@ -28,20 +38,19 @@ export default function Header() {
       const json = await response.json();
       if (json.success) {
         setStats(json.data);
+      } else {
+        setError(json.message || "Failed to load stats");
       }
     } catch (error) {
       console.error("Error fetching stats:", error);
+      setError("Network error. Please try again.");
     } finally {
       setLoadingStats(false);
     }
   };
 
-  // Reset stats when popover closes to ensure fresh data on next open
   const handleOpenChange = (open) => {
     setIsOpen(open);
-    if (!open) {
-      setStats(null); // Clear stats when closing
-    }
   };
 
   return (
@@ -68,7 +77,7 @@ export default function Header() {
             <div className="flex items-center gap-3">
               <div className="h-10 relative aspect-square">
                 <Image
-                  src={session.user.image || "/jblog.webp"}
+                  src={session.user.image}
                   alt="Profile Picture"
                   className="object-cover border rounded-2xl"
                   fill
@@ -81,29 +90,29 @@ export default function Header() {
               </div>
             </div>
 
-            {loadingStats ? (
+            {error && <p className="text-red-500 text-sm">{error}</p>}
+
+            {loadingStats && stats === null ? (
               <div className="flex justify-center py-4">
                 <Spinner size="sm" />
               </div>
             ) : stats ? (
               <div className="space-y-3 py-4 w-full">
                 <div className="flex mb-2 justify-between items-center">
-              <div>
-                <span className="text-xl font-bold text-indigo-600">{stats.kanjiMastered}</span>
-                <span className="text-xs"> / {stats.totalKanji} kanji</span>
-              </div>
-
-        <div>
-                <span className="text-xl font-bold text-cyan-600">{stats.groupsCompleted}</span>
-                <span className="text-xs"> / {stats.totalGroups} groups</span>
-              </div>
+                  <div>
+                    <span className="text-xl font-bold text-indigo-600">{stats.kanjiMastered}</span>
+                    <span className="text-xs"> / {stats.totalKanji} kanji</span>
+                  </div>
+                  <div>
+                    <span className="text-xl font-bold text-cyan-600">{stats.groupsCompleted}</span>
+                    <span className="text-xs"> / {stats.totalGroups} groups</span>
+                  </div>
                 </div>
               </div>
             ) : (
               <p className="text-gray-500 text-sm">No stats available</p>
             )}
 
-     
             <Button
               size="sm"
               color="danger"
