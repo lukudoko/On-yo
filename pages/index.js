@@ -80,17 +80,7 @@ export default function Home() {
       const data = await response.json();
 
       if (data.success) {
-
-        const fetchResponse = await fetch('/api/stats', { headers: apiHeaders });
-        const fetchJson = await fetchResponse.json();
-
-        if (fetchJson.success) {
-          setDashboardData(fetchJson.data);
-        } else {
-
-          setDashboardData(prev => ({ ...prev, track: data.track }));
-        }
-
+        setDashboardData(prev => ({ ...prev, track: data.track }));
         onOpenChange(false);
       } else {
         console.error('Error updating track:', data.error);
@@ -135,7 +125,7 @@ export default function Home() {
   const { progress, nextGroup, stats, recentActivity, weeklyStats, track } = dashboardData;
   const completionPercentage = Math.round((progress.mastered / Math.max(progress.total, 1)) * 100);
   const groupsPercentage = Math.round((stats.completedGroups / Math.max(stats.totalGroups, 1)) * 100);
-console.log(dashboardData);
+
   return (
     <div className="p-6 max-w-5xl mx-auto">
 
@@ -153,16 +143,14 @@ console.log(dashboardData);
           <p className="text-[5.25rem] font-bold font-jp-round mb-2">{nextGroup.reading}</p>
           <Button
             as="a"
-            href={track === 'jlpt'
-              ? `/groups/${nextGroup.reading}?jlpt=N${dashboardData.jlptLevel}`
-              : `/groups/${nextGroup.reading}`
-            }
+            href={`/groups/${nextGroup.reading}`}
             size="sm"
             className="font-medium text-slate-900 bg-indigo-100"
           >
             Continue Learning
           </Button>
         </div>
+
 
         <div className="flex p-6 flex-col col-span-1 shadow-sm row-span-2 bg-white rounded-3xl">
           <p className="text-2xl font-bold mb-4">Stats</p>
@@ -190,6 +178,7 @@ console.log(dashboardData);
               </div>
             </div>
 
+
             <div className="flex flex-col items-center justify-center">
               <CircularProgress
                 aria-label="Groups progress"
@@ -214,6 +203,7 @@ console.log(dashboardData);
             </div>
           </div>
 
+
           <div className="grid grid-cols-3 md:gap-4 lg-gap-6 gap-2 mt-3">
             <div className="flex bg-green-400 justify-center gap-x-1 items-center p-2 rounded-2xl">
               <HiCheckCircle className="fill-green-900" />
@@ -229,6 +219,7 @@ console.log(dashboardData);
             </div>
           </div>
         </div>
+
 
         <div className="flex p-6 flex-col col-span-1 shadow-sm bg-white row-span-1 rounded-3xl">
           <p className="text-2xl font-bold mb-4">{track === 'stat' ? 'Stats' : 'JLPT'} Track</p>
@@ -251,6 +242,7 @@ console.log(dashboardData);
             </Button>
           </div>
         </div>
+
 
         {recentActivity?.length > 0 && (
           <div className="flex p-6 flex-col md:col-span-2 shadow-sm bg-white row-span-2 h-fit mb-8 rounded-3xl">
@@ -287,6 +279,7 @@ console.log(dashboardData);
                 );
               })}
 
+
               {weeklyStats && (
                 <div className="flex justify-center flex-col py-2 px-4 bg-slate-100  rounded-xl text-xs">
                   <div className="flex justify-between">
@@ -308,6 +301,7 @@ console.log(dashboardData);
           </div>
         )}
       </div>
+
 
       <Modal
         isOpen={isOpen}
@@ -336,7 +330,7 @@ console.log(dashboardData);
                       onPress={() => changeTrack('stat')}
                       isLoading={changingTrack && track !== 'stat'}
                       isDisabled={changingTrack || track === 'stat'}
-                      className="font-semibold text-indigo-800 "
+                    className="font-semibold text-indigo-800 "
 
                     >
                       Statistics-Based Track

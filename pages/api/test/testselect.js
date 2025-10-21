@@ -48,25 +48,24 @@ export default async function handler(req, res) {
     const learningKanji = allTestable.filter(k => k.masteryLevel === 1);
     const knownKanji = allTestable.filter(k => k.masteryLevel === 2);
 
-    const minKnown = 2;
-    const maxKnown = 5;
-    const targetKnown = Math.min(
-      knownKanji.length,
-      Math.max(minKnown, Math.floor(Math.random() * (maxKnown - minKnown + 1)) + minKnown)
-    );
+    let selectedKanji = [];
 
-    const targetLearning = Math.min(
-      learningKanji.length,
-      15 - targetKnown
-    );
+    if (learningKanji.length > 0) {
+      const numLearningToInclude = Math.min(learningKanji.length, Math.max(3, Math.floor(allTestable.length * 0.2)));
+      const shuffledLearning = [...learningKanji].sort(() => 0.5 - Math.random());
+      selectedKanji.push(...shuffledLearning.slice(0, numLearningToInclude));
+    }
 
-    const shuffledLearning = [...learningKanji].sort(() => 0.5 - Math.random());
-    const shuffledKnown = [...knownKanji].sort(() => 0.5 - Math.random());
+    const remainingSlots = 15 - selectedKanji.length;
+    if (remainingSlots > 0 && knownKanji.length > 0) {
+      const shuffledKnown = [...knownKanji].sort(() => 0.5 - Math.random());
+      const additionalKnown = shuffledKnown.slice(0, remainingSlots);
+      selectedKanji.push(...additionalKnown);
+    }
 
-    const selectedKanji = [
-      ...shuffledLearning.slice(0, targetLearning),
-      ...shuffledKnown.slice(0, targetKnown)
-    ].sort(() => 0.5 - Math.random());
+    selectedKanji = selectedKanji.sort(() => 0.5 - Math.random());
+
+    selectedKanji = selectedKanji.slice(0, 15);
 
     const kanjiWithOptions = await Promise.all(selectedKanji.map(async (progress) => {
 
