@@ -81,8 +81,6 @@ export default function Header() {
               </div>
             </div>
 
-            <Divider className="my-3" />
-
             {loadingStats ? (
               <div className="flex justify-center py-4">
                 <Spinner size="sm" />

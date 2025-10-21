@@ -54,6 +54,7 @@ model UserProgress {
   kanjiId      Int
   kanji        Kanji    @relation(fields: [kanjiId], references: [id])
   masteryLevel Int      @default(0) // 0=unseen, 1=learning, 2=known
+  testStreak   Int      @default(0) // Current correct test streak
   lastStudied  DateTime @updatedAt
   createdAt    DateTime @default(now())
 

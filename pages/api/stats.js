@@ -1,9 +1,8 @@
 import { getUserId } from '@/utils/progress';
 import { getDashboardData } from '@/utils/dashboard';
 import { getUserJlptLevel } from '@/utils/jlpt';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 
-const prisma = new PrismaClient();
 const cache = new Map();
 
 export default async function handler(req, res) {
