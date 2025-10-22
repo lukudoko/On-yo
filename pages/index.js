@@ -48,7 +48,7 @@ export default function Home() {
   const changeTrack = async (newTrack) => {
     setChangingTrack(true);
     try {
-      const response = await fetch('/api/stats', {
+      const response = await fetch('/api/user/track', {
         method: 'PUT',
         headers: apiHeaders,
         body: JSON.stringify({ track: newTrack })
@@ -59,7 +59,6 @@ export default function Home() {
       if (data.success) {
         const fetchResponse = await fetch('/api/stats', { headers: apiHeaders });
         const fetchJson = await fetchResponse.json();
-
         if (fetchJson.success) {
           setDashboardData(fetchJson.data);
         } else {

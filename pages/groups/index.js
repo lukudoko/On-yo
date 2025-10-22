@@ -150,12 +150,13 @@ export default function LearnPage() {
         setLoading(true);
         setError(null);
 
-        const trackResponse = await fetch("/api/stats?type=track", {
+        const trackResponse = await fetch("/api/user/track", {
           headers: {
             'X-API-Token': process.env.NEXT_PUBLIC_API_TOKEN
           }
         });
         const trackData = await trackResponse.json();
+        console.log(trackData)
 
         let currentMode = 'stats';
         if (trackResponse.ok && trackData.data.track === 'jlpt') {

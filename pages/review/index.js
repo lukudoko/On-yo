@@ -34,7 +34,7 @@ export default function KanjiTest() {
     const loadTestData = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/test/testselect', {
+        const response = await fetch('/api/test/review/testselect', {
           headers: {
             'x-api-token': process.env.NEXT_PUBLIC_API_TOKEN
           }
@@ -78,7 +78,7 @@ export default function KanjiTest() {
     setSessionResults(prev => [...prev, result]);
 
     try {
-      const response = await fetch('/api/test/updateStreak', {
+      const response = await fetch('/api/test/review/updateStreak', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -35,10 +35,9 @@ export default async function handler(req, res) {
       });
     }
 
-    // Get current progress
     const progress = await prisma.userProgress.findUnique({
-      where: { 
-        userId_kanjiId: { userId, kanjiId } 
+      where: {
+        userId_kanjiId: { userId, kanjiId }
       }
     });
 
@@ -49,36 +48,34 @@ export default async function handler(req, res) {
       });
     }
 
-    // Update streak based on correctness
-    let newStreak = isCorrect 
-      ? Math.min(7, progress.testStreak + 1) 
+    let newStreak = isCorrect
+      ? Math.min(7, progress.testStreak + 1)
       : Math.max(-3, progress.testStreak - 1);
-    
+
     let newMasteryLevel = progress.masteryLevel;
 
-    // Apply promotion/demotion logic
-    if (progress.masteryLevel === 1 && newStreak >= 7) { // Learning -> Known
+    if (progress.masteryLevel === 1 && newStreak >= 7) {
       newMasteryLevel = 2;
-      newStreak = 0; // Reset streak after promotion
-    } else if (progress.masteryLevel === 1 && newStreak <= -3) { // Learning -> Not studied
+      newStreak = 0;
+    } else if (progress.masteryLevel === 1 && newStreak <= -3) {
       newMasteryLevel = 0;
-      newStreak = 0; // Reset streak after demotion
-    } else if (progress.masteryLevel === 2 && newStreak >= 7) { // Known -> Trusted
+      newStreak = 0;
+    } else if (progress.masteryLevel === 2 && newStreak >= 7) {
       newMasteryLevel = 2;
-      newStreak = 7; // Cap at 7 to mark as trusted
-    } else if (progress.masteryLevel === 2 && newStreak <= -3) { // Known -> Learning
+      newStreak = 7;
+    } else if (progress.masteryLevel === 2 && newStreak <= -3) {
       newMasteryLevel = 1;
-      newStreak = 0; // Reset streak after demotion
+      newStreak = 0;
     }
 
     const updated = await prisma.userProgress.update({
-      where: { 
-        userId_kanjiId: { userId, kanjiId } 
+      where: {
+        userId_kanjiId: { userId, kanjiId }
       },
       data: {
         testStreak: newStreak,
         masteryLevel: newMasteryLevel,
-        lastStudied: new Date() // Update cooldown timer
+        lastStudied: new Date()
       }
     });
 

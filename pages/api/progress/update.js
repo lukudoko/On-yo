@@ -1,5 +1,4 @@
 import { ProgressService, getUserId } from '@/utils/progress';
-import { invalidateUserCache } from '@/pages/api/stats';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -33,14 +32,6 @@ export default async function handler(req, res) {
     }
 
     const result = await ProgressService.updateKanjiMastery(userId, kanji, masteryLevel);
-
-    try {
-      invalidateUserCache(userId);
-      //console.log(`Cache invalidated for user ${userId}`);
-    } catch (cacheError) {
-      console.error('Error invalidating cache:', cacheError);
-
-    }
 
     res.status(200).json({ success: true, result });
   } catch (error) {

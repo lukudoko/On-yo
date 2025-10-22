@@ -7,7 +7,7 @@ export default function TestVisual() {
   const fetchTestKanji = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/test/testselect', {
+      const response = await fetch('/api/test/review/testselect', {
         headers: {
           'x-api-token': process.env.NEXT_PUBLIC_API_TOKEN
         }

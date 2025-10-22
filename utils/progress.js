@@ -1,13 +1,12 @@
 import { prisma } from '@/lib/prisma';
 
-// Core progress functions that work with userId directly
 export class ProgressService {
-  // Update mastery level for a kanji
+
   static async updateKanjiMastery(userId, kanjiCharacter, masteryLevel) {
     if (!userId) return null;
 
     try {
-      // Find kanji and update/create progress in a single transaction
+
       const result = await prisma.$transaction(async (tx) => {
         const kanji = await tx.kanji.findUnique({
           where: { character: kanjiCharacter },
@@ -45,14 +44,13 @@ export class ProgressService {
     }
   }
 
-  // Get mastery levels for multiple kanji in one efficient query
   static async getBatchKanjiMastery(userId, kanjiCharacters) {
     if (!userId) {
       return kanjiCharacters.reduce((acc, char) => ({ ...acc, [char]: 0 }), {});
     }
 
     try {
-      // Single query to get all kanji and their progress
+
       const results = await prisma.kanji.findMany({
         where: { 
           character: { in: kanjiCharacters } 
@@ -66,15 +64,12 @@ export class ProgressService {
         }
       });
 
-      // Build result map
       const masteryLevels = {};
-      
-      // Initialize all requested kanji to 0
+
       kanjiCharacters.forEach(char => {
         masteryLevels[char] = 0;
       });
-      
-      // Update with actual progress
+
       results.forEach(kanji => {
         masteryLevels[kanji.character] = kanji.progress[0]?.masteryLevel || 0;
       });
@@ -86,12 +81,11 @@ export class ProgressService {
     }
   }
 
-  // Get progress for all onyomi groups efficiently
   static async getAllOnyomiGroupsProgress(userId) {
     if (!userId) return new Map();
 
     try {
-      // Single query to get all progress data grouped by onyomi
+
       const results = await prisma.userProgress.findMany({
         where: { userId: userId },
         select: {
@@ -103,15 +97,15 @@ export class ProgressService {
       });
 
       const progressByOnyomi = new Map();
-      
+
       results.forEach(({ masteryLevel, kanji }) => {
         if (!kanji?.primary_onyomi) return;
-        
+
         const onyomi = kanji.primary_onyomi;
         if (!progressByOnyomi.has(onyomi)) {
           progressByOnyomi.set(onyomi, { mastered: 0, learning: 0, unlearned: 0 });
         }
-        
+
         const counts = progressByOnyomi.get(onyomi);
         if (masteryLevel === 2) counts.mastered++;
         else if (masteryLevel === 1) counts.learning++;
@@ -124,14 +118,13 @@ export class ProgressService {
     }
   }
 
-  // Get progress for specific onyomi group
   static async getOnyomiGroupProgress(userId, onyomiReading) {
     const defaultResult = { mastered: 0, learning: 0, unlearned: 0, total: 0 };
-    
+
     if (!userId) return defaultResult;
 
     try {
-      // Single query with join to get kanji count and progress
+
       const results = await prisma.kanji.findMany({
         where: { primary_onyomi: onyomiReading },
         select: {
@@ -168,11 +161,10 @@ export class ProgressService {
     }
   }
 
-  // Get overall progress stats
   static async getOverallProgress(userId) {
     try {
       const totalKanji = await prisma.kanji.count();
-      
+
       if (!userId) {
         return { mastered: 0, learning: 0, unlearned: totalKanji, total: totalKanji };
       }
@@ -194,11 +186,11 @@ export class ProgressService {
       progressStats.forEach(stat => {
         const count = stat._count;
         totalStudied += count;
-        
+
         if (stat.masteryLevel === 2) stats.mastered = count;
         else if (stat.masteryLevel === 1) stats.learning = count;
       });
-      
+
       stats.unlearned = totalKanji - totalStudied;
       return stats;
     } catch (error) {
@@ -209,7 +201,6 @@ export class ProgressService {
   }
 }
 
-// Helper function to get user ID from session (for API routes)
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/pages/api/auth/[...nextauth]";
 

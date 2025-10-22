@@ -31,7 +31,7 @@ export default function Header() {
     setLoadingStats(true);
     setError(null);
     try {
-      const response = await fetch("/api/stats?type=header", {
+      const response = await fetch("/api/stats/header", {
         headers: {
           'X-API-Token': process.env.NEXT_PUBLIC_API_TOKEN
         }
