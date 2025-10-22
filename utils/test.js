@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 
 export async function getTestableKanji(userId, limit = 15) {
-  const COOLDOWN_HOURS = 1; 
+  const COOLDOWN_HOURS = 12; 
 
   const now = new Date();
 
