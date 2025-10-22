@@ -4,7 +4,7 @@ import { useRouter } from 'next/router';
 import { Button, CircularProgress, Chip, Modal, useDisclosure, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/react';
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { enIE } from 'date-fns/locale';
-import { HiBookOpen, HiCheckCircle, HiQuestionMarkCircle } from "react-icons/hi2";
+import { HiBookOpen, HiMiniCheckCircle , HiMiniQuestionMarkCircle    } from "react-icons/hi2";
 
 const getMasteryColors = (level) => {
   const colors = {
@@ -216,7 +216,7 @@ console.log(dashboardData);
 
           <div className="grid grid-cols-3 md:gap-4 lg-gap-6 gap-2 mt-3">
             <div className="flex bg-green-400 justify-center gap-x-1 items-center p-2 rounded-2xl">
-              <HiCheckCircle className="fill-green-900" />
+              <HiMiniCheckCircle  className="fill-green-900" />
               <span className="text-base lg:text-lg font-bold text-green-900">{progress.mastered}</span>
             </div>
             <div className="flex bg-yellow-400 justify-center gap-x-1 items-center p-2 rounded-2xl">
@@ -224,7 +224,7 @@ console.log(dashboardData);
               <span className="text-base lg:text-lg font-bold text-yellow-900">{progress.learning}</span>
             </div>
             <div className="flex bg-red-400 justify-center gap-x-1 items-center p-2 rounded-2xl">
-              <HiQuestionMarkCircle className="fill-red-900" />
+              <HiMiniQuestionMarkCircle    className="fill-red-900" />
               <span className="text-base lg:text-lg font-bold text-red-900">{progress.unlearned}</span>
             </div>
           </div>

@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Modal, Chip, ModalContent, ModalHeader, ModalBody, Button, ModalFooter, useDisclosure } from '@heroui/react';
-import { HiBookOpen, HiCheckCircle, HiQuestionMarkCircle } from "react-icons/hi2";
+import { HiBookOpen, HiMiniCheckCircle , HiMiniQuestionMarkCircle    } from "react-icons/hi2";
 
 const KanjiCard = ({
   kanji,
@@ -76,21 +76,18 @@ const KanjiCard = ({
     switch (level) {
       case 2:
         return {
-          color: 'bg-green-400',
+          color: 'bg-[#1F8A6C]',
           title: 'Mastered!',
-          text: 'text-green-900'
         };
       case 1:
         return {
-          color: 'bg-yellow-400',
+          color: 'bg-[#FF7C37]',
           title: 'Learning',
-          text: 'text-yellow-900'
         };
       default:
         return {
-          color: 'bg-red-400',
+          color: 'bg-[#E72C3A]',
           title: "Don't Know",
-          text: 'text-red-900'
         };
     }
   };
@@ -173,7 +170,7 @@ const KanjiCard = ({
                       <Chip
                         size='sm'
                         classNames={{
-                          base: "bg-blue-500",
+                          base: "bg-[#3B4790]",
                           content: "font-bold text-white",
                         }}
                       > #{freq_score}</Chip>
@@ -189,8 +186,8 @@ const KanjiCard = ({
                     <Chip
                       size='sm'
                       classNames={{
-                        base: `${masteryInfo.color} ${masteryInfo.text}`,
-                        content: "font-medium",
+                        base: `${masteryInfo.color}`,
+                        content: "font-medium text-white",
                       }}
                     >   {masteryInfo.title}</Chip>
 
@@ -205,14 +202,14 @@ const KanjiCard = ({
                   transition={{ delay: 0.1, duration: 0.3 }}
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div className="bg-indigo-50/80 rounded-2xl p-4">
+                    <div className="bg-[#F56A8315] rounded-2xl p-4">
                       <h3 className="font-bold mb-3 text-base tracking-wide">Onyomi</h3>
                       <div className="font-jp-round text-gray-700 text-lg font-light flex flex-wrap gap-2">
                         {formatReadings(readings_on)}
                       </div>
                     </div>
 
-                    <div className="bg-indigo-50/80  rounded-2xl p-4">
+                    <div className="bg-[#F56A8315]  rounded-2xl p-4">
                       <h3 className="font-bold mb-3 text-base  tracking-wide">Kunyomi</h3>
                       <div className="font-jp-round text-gray-700 text-lg font-light flex flex-wrap gap-2">
                         {formatReadings(readings_kun)}
@@ -220,15 +217,15 @@ const KanjiCard = ({
                     </div>
                   </div>
 
-                  <div className="bg-indigo-50/80 rounded-2xl p-4 mb-6">
+                  <div className="bg-[#F56A8315] rounded-2xl p-4 mb-6">
                     <h3 className="font-bold mb-3 text-base tracking-wide">Meanings</h3>
                     <p className="text-gray-700 text-sm flex flex-wrap">
                       {formatReadings(meanings)}
                     </p>
                   </div>
                   {exampleWords && exampleWords.length > 0 && (
-                    <div className="bg-indigo-50/80 rounded-2xl p-4 mb-6">
-                      <h3 className="text-gray-500 font-semibold mb-3 text-base tracking-wide">Example Words</h3>
+                    <div className="bg-[#F56A8315] rounded-2xl p-4 mb-6">
+                      <h3 className=" font-semibold mb-3 text-base tracking-wide">Example Words</h3>
                       <div className="grid md:grid-cols-3  grid-cols-2 gap-3">
                         {exampleWords.map((word, index) => {
                           let displayMeaning = word.meaning;
@@ -243,7 +240,7 @@ const KanjiCard = ({
                           }
 
                           return (
-                            <div key={index} className="bg-white rounded-2xl p-2">
+                            <div key={index} className="flex flex-col bg-white justify-center rounded-2xl p-2">
                               <div className="flex flex-col items-center justify-center items-baseline">
                                 <p className="text-gray-600 text-xs">{word.reading}</p>
                                 <p className="font-jp-round text-xl">{word.word}</p>
@@ -262,16 +259,16 @@ const KanjiCard = ({
                 <div className="flex justify-center gap-4">
                   <Button
                     isIconOnly
-                    className="font-medium bg-green-200 text-green-900"
+                    className="font-medium bg-[#1F8A6C] text-white"
                     onPress={() => handleMasteryUpdate(2)}
                     isDisabled={isUpdating || masteryLevel === 2}
                     isLoading={isUpdating && masteryLevel === 2}
                     size='lg'
                   >
-                    <HiCheckCircle size={22} />
+                    <HiMiniCheckCircle  size={22} />
                   </Button>
                   <Button
-                    className="font-medium bg-yellow-200 text-yellow-900"
+                    className="font-medium bg-[#FF7C37] text-white"
                     onPress={() => handleMasteryUpdate(1)}
                     isIconOnly
                     isDisabled={isUpdating || masteryLevel === 1}
@@ -282,13 +279,13 @@ const KanjiCard = ({
                   </Button>
                   <Button
                     isIconOnly
-                    className="font-medium bg-red-200 text-red-900"
+                    className="font-medium bg-[#E72C3A] text-white"
                     onPress={() => handleMasteryUpdate(0)}
                     isDisabled={isUpdating || masteryLevel === 0}
                     isLoading={isUpdating && masteryLevel === 0}
                     size='lg'
                   >
-                    <HiQuestionMarkCircle size={22} />
+                    <HiMiniQuestionMarkCircle    size={22} />
                   </Button>
                 </div>
               </ModalFooter>

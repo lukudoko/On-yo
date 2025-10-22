@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'react';
 import KanjiCard from '@/components/card';
 import { Chip } from '@heroui/react';
-import { HiBookOpen, HiCheckCircle } from "react-icons/hi2";
+import { HiBookOpen, HiMiniCheckCircle  } from "react-icons/hi2";
 
 export async function getServerSideProps({ params, query }) {
   try {
     const onyomi = params.kanji;
-    const { jlpt } = query; 
+    const { jlpt } = query;
 
     return {
       props: {
         onyomi: onyomi,
-        initialJlptFilter: jlpt || null, 
+        initialJlptFilter: jlpt || null,
       },
     };
   } catch (error) {
@@ -58,7 +58,7 @@ export default function KanjiGroupPage({ onyomi, initialJlptFilter }) {
     if (onyomi) {
       fetchGroupData();
     }
-  }, [onyomi, initialJlptFilter]); 
+  }, [onyomi, initialJlptFilter]);
 
   const handleMasteryUpdate = (kanji, newLevel) => {
     setGroupData(prev => ({
@@ -73,9 +73,9 @@ export default function KanjiGroupPage({ onyomi, initialJlptFilter }) {
   if (loading) {
     return (
       <div className="p-6 max-w-5xl mx-auto">
-        <div className="mb-8">
-          <div className="h-8 bg-gray-200 rounded w-64 animate-pulse mb-2"></div>
-          <div className="h-4 bg-gray-200 rounded w-48 animate-pulse"></div>
+        <div className="mb-8 flex justify-between items-center">
+          <div className="h-12 bg-gray-200 rounded w-32 animate-pulse mb-2"></div>
+          <div className="h-7 bg-gray-200 rounded w-60 animate-pulse"></div>
         </div>
         <div className="grid mx-auto max-w-md md:max-w-4xl grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, index) => (
@@ -105,40 +105,43 @@ export default function KanjiGroupPage({ onyomi, initialJlptFilter }) {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      <div className="mb-8">
+      <div className="mb-8 flex flex-col md:flex-row justify-between gap-4 md:items-center">
         <h1 className="text-5xl font-jp-round font-black mb-2">{onyomi}</h1>
 
-        <div className="flex items-center gap-4 mt-6 text-sm text-gray-600">
-
+        <div className="flex items-center gap-4 text-sm text-gray-600">
           <Chip
             classNames={{
-              content: "text-indigo-900 font-bold",
+              content: "text-white font-semibold",
             }}
-            className='bg-indigo-400 text-bold'>
+            className='bg-[#3B4790]'>
             {totalKanji} 字
           </Chip>
           <Chip
             classNames={{
-              base: "pl-2",
-              content: "text-green-900 font-bold",
+              content: "text-white font-semibold",
             }}
-            startContent={<HiCheckCircle className='fill-green-900' />} className='bg-green-400 text-bold'>
+            className='bg-[#F56A83]'>
+            {progressPercentage}%
+          </Chip>
+
+          <Chip
+            classNames={{
+              base: "pl-2",
+              content: "text-white font-semibold",
+            }}
+            startContent={<HiMiniCheckCircle  className='fill-white' />}
+            className='bg-[#1F8A6C]'>
             {masteredCount}
           </Chip>
+
           <Chip
             classNames={{
               base: "pl-2",
-              content: "text-yellow-900 font-bold",
+              content: "text-white font-semibold",
             }}
-            startContent={<HiBookOpen className='fill-yellow-900'/>} className='bg-yellow-400 text-bold'>
+            startContent={<HiBookOpen className='fill-white' />}
+            className='bg-[#FF7C37]'>
             {learningCount}
-          </Chip>
-          <Chip
-            classNames={{
-              content: "text-cyan-900 font-bold",
-            }}
-            className='bg-cyan-400 text-bold'>
-            {progressPercentage}%
           </Chip>
         </div>
       </div>

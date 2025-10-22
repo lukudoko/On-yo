@@ -30,7 +30,7 @@ export default function OnyomiGroupCard({
       >
         {kanjiCount !== null && (
           <div className="absolute top-3 right-3">
-            <div className="flex items-center justify-center font-bold bg-gray-800  text-white w-6 aspect-square text-xs rounded-full">
+            <div className="flex items-center justify-center font-black bg-gray-800  text-white w-7 aspect-square text-xs rounded-full">
               {kanjiCount}
             </div>
           </div>
@@ -52,7 +52,7 @@ export default function OnyomiGroupCard({
             >
               <div className="flex h-full w-full">
                 <motion.div 
-                  className="bg-green-500 flex items-center justify-center"
+                  className="bg-[#1F8A6C] flex items-center justify-center"
                   style={{ width: `${(mastered / totalKanji) * 100}%` }}
                 >
                   {mastered > 0 && (
@@ -69,7 +69,7 @@ export default function OnyomiGroupCard({
                   )}
                 </motion.div>
                 <motion.div 
-                  className="bg-yellow-500 flex items-center justify-center"
+                  className="bg-[#FF7C37] flex items-center justify-center"
                   style={{ width: `${(learning / totalKanji) * 100}%` }}
                 >
                   {learning > 0 && (
@@ -86,7 +86,7 @@ export default function OnyomiGroupCard({
                   )}
                 </motion.div>
                 <motion.div 
-                  className="bg-red-500 flex items-center justify-center"
+                  className="bg-[#E72C3A] flex items-center justify-center"
                   style={{ width: `${(unlearned / totalKanji) * 100}%` }}
                 >
                   {unlearned > 0 && (

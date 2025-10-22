@@ -1,32 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
-import { Button, CircularProgress, Chip, Modal, useDisclosure, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/react';
-import { formatDistanceToNow, parseISO } from 'date-fns';
-import { enIE } from 'date-fns/locale';
-import { HiBookOpen, HiCheckCircle, HiQuestionMarkCircle } from "react-icons/hi2";
-
-const getMasteryColors = (level) => {
-  const colors = {
-    2: { bg: 'bg-green-400', text: 'text-green-900', label: 'Mastered' },
-    1: { bg: 'bg-yellow-400', text: 'text-yellow-900', label: 'Learning' },
-    0: { bg: 'bg-red-400', text: 'text-red-900', label: 'Review' }
-  };
-  return colors[level] || colors[0];
-};
-
-const formatRelativeTime = (dateString) => {
-  if (!dateString) return 'N/A';
-  try {
-    return formatDistanceToNow(parseISO(dateString), {
-      addSuffix: true,
-      locale: enIE
-    });
-  } catch (error) {
-    console.error('Error formatting date:', error);
-    return 'N/A';
-  }
-};
+import { motion } from 'framer-motion';
+import { Button, CircularProgress, Modal, useDisclosure, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/react';
+import { HiBookOpen, HiMiniCheckCircle, HiMiniQuestionMarkCircle } from "react-icons/hi2";
 
 const apiHeaders = {
   'Content-Type': 'application/json',
@@ -80,7 +57,15 @@ export default function Home() {
       const data = await response.json();
 
       if (data.success) {
-        setDashboardData(prev => ({ ...prev, track: data.track }));
+        const fetchResponse = await fetch('/api/stats', { headers: apiHeaders });
+        const fetchJson = await fetchResponse.json();
+
+        if (fetchJson.success) {
+          setDashboardData(fetchJson.data);
+        } else {
+          setDashboardData(prev => ({ ...prev, track: data.track }));
+        }
+
         onOpenChange(false);
       } else {
         console.error('Error updating track:', data.error);
@@ -98,8 +83,8 @@ export default function Home() {
     return (
       <div className="fixed inset-0 flex items-center justify-center p-6">
         <div className="max-w-5xl w-full">
-          <div className="text-8xl animate-pulse font-jp-round text-center py-10">
-            <p>音読</p>
+          <div className="text-5xl font-bold animate-pulse font-jp text-center py-10">
+            <p>On&apos;yo!</p>
           </div>
         </div>
       </div>
@@ -126,34 +111,86 @@ export default function Home() {
   const completionPercentage = Math.round((progress.mastered / Math.max(progress.total, 1)) * 100);
   const groupsPercentage = Math.round((stats.completedGroups / Math.max(stats.totalGroups, 1)) * 100);
 
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        duration: 0.4,
+        ease: "easeOut"
+      }
+    }
+  };
+
   return (
     <div className="p-6 max-w-5xl mx-auto">
-
-      <div className="mb-6">
+      {/* Animated greeting */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="mb-6"
+      >
         {session?.user?.name && (
           <p className="text-2xl font-bold">
             Hi {session.user.name.replace(/\s*\([^)]*\)$/, '').trim()}!
           </p>
         )}
-      </div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      {/* Animated grid */}
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8"
+      >
+        <motion.div
+          variants={itemVariants}
+          className="flex px-6 py-8 gap-6 h-full col-span-1 row-span-2  shadow-sm justify-center items-center bg-white rounded-3xl"
+        >
+          <div className='flex flex-1 items-center max-h-60 h-full gap-4 flex-col justify-around'>
+            <p className="text-[5.25rem] font-bold font-jp-round ">{nextGroup.reading}</p>
+            <div className='flex gap-6 '>
+              <Button
+                as="a"
+                href={track === 'jlpt'
+                  ? `/groups/${nextGroup.reading}?jlpt=N${dashboardData.jlptLevel}`
+                  : `/groups/${nextGroup.reading}`
+                }
+                size="md"
+                className="font-medium text-white bg-[#3B4790]"
+              >
+                Continue!
+              </Button>
+              <Button
+                as="a"
+                href="/groups"
+                className="font-medium text-white bg-[#3B4790]"
+              >
+                All Groups
+              </Button>
+            </div>
+          </div>
+        </motion.div>
 
-        <div className="flex px-6 py-8 col-span-1 row-span-1 flex-col shadow-sm justify-center items-center bg-white h-fit rounded-3xl">
-          <p className="text-[5.25rem] font-bold font-jp-round mb-2">{nextGroup.reading}</p>
-          <Button
-            as="a"
-            href={`/groups/${nextGroup.reading}`}
-            size="sm"
-            className="font-medium text-slate-900 bg-indigo-100"
-          >
-            Continue Learning
-          </Button>
-        </div>
-
-
-        <div className="flex p-6 flex-col col-span-1 shadow-sm row-span-2 bg-white rounded-3xl">
-          <p className="text-2xl font-bold mb-4">Stats</p>
+        <motion.div
+          variants={itemVariants}
+          className="flex p-6 flex-col col-span-1 shadow-sm row-span-2 bg-white rounded-3xl"
+        >
+          <p className="text-xl font-bold mb-4">Stats</p>
           <div className="flex flex-1 items-center justify-around">
 
             <div className="flex flex-col items-center justify-center">
@@ -161,23 +198,21 @@ export default function Home() {
                 aria-label="Kanji progress"
                 size="lg"
                 value={completionPercentage}
-                color="primary"
                 showValueLabel={true}
                 classNames={{
                   svg: "w-28 h-28",
-                  indicator: "stroke-indigo-400",
-                  track: "stroke-indigo-400/10",
-                  value: "text-xl font-bold text-indigo-600",
+                  indicator: "stroke-[#3B4790]",
+                  track: "stroke-[#3B479010]",
+                  value: "text-xl font-bold text-[#3B4790]",
                   base: "mb-2"
                 }}
                 strokeWidth={4}
               />
               <div className="mb-2">
-                <span className="text-xl font-bold text-indigo-600">{progress.mastered}</span>
+                <span className="text-xl font-bold text-[#3B4790]">{progress.mastered}</span>
                 <span className="text-xs"> / {progress.total} kanji</span>
               </div>
             </div>
-
 
             <div className="flex flex-col items-center justify-center">
               <CircularProgress
@@ -188,120 +223,101 @@ export default function Home() {
                 showValueLabel={true}
                 classNames={{
                   svg: "w-28 h-28",
-                  indicator: "stroke-cyan-400",
-                  track: "stroke-cyan-400/10",
-                  value: "text-lg font-bold text-cyan-600",
+                  indicator: "stroke-[#F56A83]",
+                  track: "stroke-[#F56A8310]",
+                  value: "text-lg font-bold text-[#F56A83]",
                   base: "mb-2"
                 }}
                 strokeWidth={4}
               />
               <div className="mb-1">
-                <span className="text-xl font-bold text-cyan-600">{stats.completedGroups}</span>
+                <span className="text-xl font-bold text-[#F56A83]">{stats.completedGroups}</span>
                 <span className="text-xs"> / {stats.totalGroups} groups</span>
               </div>
               <span className="text-xs mb-2">{stats.inProgressGroups} in progress</span>
             </div>
           </div>
 
-
-          <div className="grid grid-cols-3 md:gap-4 lg-gap-6 gap-2 mt-3">
-            <div className="flex bg-green-400 justify-center gap-x-1 items-center p-2 rounded-2xl">
-              <HiCheckCircle className="fill-green-900" />
-              <span className="text-base lg:text-lg font-bold text-green-900">{progress.mastered}</span>
+          <div className="flex justify-center py-4 gap-6">
+            <div className="flex justify-center gap-x-1 items-center p-2">
+              <HiMiniCheckCircle className="fill-[#1F8A6C]" />
+              <span className="text-lg lg:text-xl font-black decoration-2 underline text-[#1F8A6C]">{progress.mastered}</span>
             </div>
-            <div className="flex bg-yellow-400 justify-center gap-x-1 items-center p-2 rounded-2xl">
-              <HiBookOpen className="fill-yellow-900" />
-              <span className="text-base lg:text-lg font-bold text-yellow-900">{progress.learning}</span>
+            <div className="flex  justify-center gap-x-1 items-center p-2 rounded-2xl">
+              <HiBookOpen className="fill-[#FF7C37]" />
+              <span className="text-lg lg:text-xl font-black decoration-2 underline text-[#FF7C37]">{progress.learning}</span>
             </div>
-            <div className="flex bg-red-400 justify-center gap-x-1 items-center p-2 rounded-2xl">
-              <HiQuestionMarkCircle className="fill-red-900" />
-              <span className="text-base lg:text-lg font-bold text-red-900">{progress.unlearned}</span>
+            <div className="flex  justify-center gap-x-1 items-center p-2 rounded-2xl">
+              <HiMiniQuestionMarkCircle className="fill-[#E72C3A]" />
+              <span className="text-lg lg:text-xl font-black decoration-2 underline  text-[#E72C3A]">{progress.unlearned}</span>
             </div>
           </div>
-        </div>
 
-
-        <div className="flex p-6 flex-col col-span-1 shadow-sm bg-white row-span-1 rounded-3xl">
-          <p className="text-2xl font-bold mb-4">{track === 'stat' ? 'Stats' : 'JLPT'} Track</p>
-          <div className="flex justify-around">
-            <Button
-              as="a"
-              href="/study"
-              size="sm"
-              className="font-medium text-slate-900 bg-indigo-100"
-            >
-              View All Kanji Groups
-            </Button>
-            <Button
-              onPress={onOpen}
-              color="primary"
-              size="sm"
-              className="font-medium text-slate-900 bg-indigo-100"
-            >
-              Change Track
-            </Button>
-          </div>
-        </div>
-
-
-        {recentActivity?.length > 0 && (
-          <div className="flex p-6 flex-col md:col-span-2 shadow-sm bg-white row-span-2 h-fit mb-8 rounded-3xl">
-            <p className="text-2xl font-bold mb-4">Recent Activity</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-3">
-              {recentActivity.map((activity) => {
-                const colors = getMasteryColors(activity.masteryLevel);
-                return (
-                  <div
-                    key={`${activity.kanji}-${activity.lastStudied}`}
-                    className="flex bg-slate-100 rounded-xl items-center justify-between py-2 px-4"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-3xl font-jp-round">{activity.kanji}</span>
-                      <div>
-                        <p className="text-xs">{activity.onyomi} group</p>
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <Chip
-                        size="sm"
-                        classNames={{
-                          base: colors.bg,
-                          content: `${colors.text} text-[0.675rem] font-bold`,
-                        }}
-                      >
-                        {colors.label}
-                      </Chip>
-                      <span className="text-[0.675rem] max-w-20 text-right font-semibold">
-                        {formatRelativeTime(activity.lastStudied)}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-
-
-              {weeklyStats && (
-                <div className="flex justify-center flex-col py-2 px-4 bg-slate-100  rounded-xl text-xs">
-                  <div className="flex justify-between">
-                    <span className="font-bold">This week:</span>
-                    <span className="font-semibold text-indigo-600">{weeklyStats.thisWeek} kanji</span>
-                  </div>
-                  <div className="flex justify-between mt-1">
-                    <span className="font-bold text-gray-600">Last week:</span>
-                    <span className="font-semibold text-gray-600">{weeklyStats.lastWeek} kanji</span>
-                  </div>
-                  {weeklyStats.thisWeek > weeklyStats.lastWeek && (
-                    <div className="mt-1 text-green-600 font-medium text-center">
-                      ↑ {Math.round(((weeklyStats.thisWeek - weeklyStats.lastWeek) / Math.max(weeklyStats.lastWeek, 1)) * 100)}% improvement!
-                    </div>
+          {weeklyStats && (
+            <div className="flex justify-center flex-col p-4 bg-[#3B479010]  rounded-3xl text-xs">
+              <div className="flex justify-between">
+                <span className="font-bold">This week:</span>
+                <span className="font-semibold text-[#3B4790]">{weeklyStats.thisWeek} kanji</span>
+              </div>
+              <div className="flex justify-between mt-1">
+                <span className="font-bold text-gray-600">Last week:</span>
+                <span className="font-semibold text-gray-600">{weeklyStats.lastWeek} kanji</span>
+              </div>
+              {weeklyStats.thisWeek > weeklyStats.lastWeek && (
+                <div className="mt-1 text-green-600 font-medium text-center">
+                  {weeklyStats.lastWeek === 0 ? (
+                    "Great start this week!"
+                  ) : Math.round(((weeklyStats.thisWeek - weeklyStats.lastWeek) / weeklyStats.lastWeek) * 100) > 500 ? (
+                    "Keep it up!"
+                  ) : (
+                    `↑ ${Math.round(((weeklyStats.thisWeek - weeklyStats.lastWeek) / weeklyStats.lastWeek) * 100)}% improvement!`
                   )}
                 </div>
               )}
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </motion.div>
 
+        <motion.div
+          variants={itemVariants}
+          className="flex p-6 flex-col justify-between shadow-sm bg-white rounded-3xl"
+        >
+          <p className="text-xl font-bold mb-4">Test Yourself!</p>
+          <div className="flex items-end py-3 justify-around">
+            <Button
+              as="a"
+              href="/review"
+              size="sm"
+              className="font-medium text-white bg-[#F56A83]"
+            >
+              Review Kanji
+            </Button>
+            <Button
+              size="sm"
+              className="font-medium text-white bg-[#F56A83]"
+            >
+              Learn (Coming soon)
+            </Button>
+          </div>
+        </motion.div>
+
+        <motion.div
+          variants={itemVariants}
+          className="flex p-6 flex-col  shadow-sm bg-white rounded-3xl"
+        >
+          <p className="text-xl font-bold mb-4">{track === 'stat' ? 'Stats' : 'JLPT'} Track</p>
+          <div className="flex items-end py-3  justify-around">
+
+            <Button
+              onPress={onOpen}
+              size="sm"
+              className="font-medium text-white bg-[#3B4790]"
+            >
+              Change Track
+            </Button>
+          </div>
+        </motion.div>
+      </motion.div>
 
       <Modal
         isOpen={isOpen}
@@ -330,7 +346,7 @@ export default function Home() {
                       onPress={() => changeTrack('stat')}
                       isLoading={changingTrack && track !== 'stat'}
                       isDisabled={changingTrack || track === 'stat'}
-                    className="font-semibold text-indigo-800 "
+                      className="font-semibold text-indigo-800 "
 
                     >
                       Statistics-Based Track
@@ -346,6 +362,7 @@ export default function Home() {
                     >
                       JLPT Track
                     </Button>
+
                   </div>
                 </div>
               </ModalBody>

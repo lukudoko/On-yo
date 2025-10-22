@@ -4,13 +4,13 @@ import { useRouter } from 'next/router';
 import { Button, CircularProgress, Chip, Modal, useDisclosure, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/react';
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { enIE } from 'date-fns/locale';
-import { HiBookOpen, HiCheckCircle, HiQuestionMarkCircle } from "react-icons/hi2";
+import { HiBookOpen, HiMiniCheckCircle , HiMiniQuestionMarkCircle    } from "react-icons/hi2";
 import { motion, AnimatePresence } from 'framer-motion';
 
 const MASTERY_CONFIG = {
-  2: { bg: 'bg-green-400', text: 'text-green-900', label: 'Mastered', icon: HiCheckCircle },
+  2: { bg: 'bg-green-400', text: 'text-green-900', label: 'Mastered', icon: HiMiniCheckCircle  },
   1: { bg: 'bg-yellow-400', text: 'text-yellow-900', label: 'Learning', icon: HiBookOpen },
-  0: { bg: 'bg-red-400', text: 'text-red-900', label: 'Review', icon: HiQuestionMarkCircle }
+  0: { bg: 'bg-red-400', text: 'text-red-900', label: 'Review', icon: HiMiniQuestionMarkCircle    }
 };
 
 const API_HEADERS = {

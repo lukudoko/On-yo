@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import OnyomiGroupCard from '@/components/onyomigroupcards';
-import { Select, SelectItem, Button, Chip } from "@heroui/react";
-import { HiBookOpen, HiCheckCircle } from "react-icons/hi2";
+import { Select, SelectItem, Chip } from "@heroui/react";
+import { HiBookOpen, HiMiniCheckCircle  } from "react-icons/hi2";
 
 const LoadingSkeleton = () => (
   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -20,63 +20,62 @@ const ErrorDisplay = ({ error }) => (
 const EmptyState = ({ mode, selectedLevel }) => (
   <div className="text-center py-12 text-gray-500">
     <p>
-      {mode === 'jlpt' 
-        ? `No onyomi groups found for JLPT N${selectedLevel}.` 
+      {mode === 'jlpt'
+        ? `No onyomi groups found for JLPT N${selectedLevel}.`
         : 'No onyomi groups found.'}
     </p>
   </div>
 );
 
 const StatsLoadingSkeleton = () => (
-  <div className="flex items-center justify-center flex-wrap gap-4">
-    <div className="h-6 w-20 bg-gray-200 rounded animate-pulse"></div>
-    <div className="h-8 w-16 bg-gray-200 rounded-full animate-pulse"></div>
-    <div className="h-8 w-16 bg-gray-200 rounded-full animate-pulse"></div>
-    <div className="h-8 w-16 bg-gray-200 rounded-full animate-pulse"></div>
-    <div className="h-8 w-16 bg-gray-200 rounded-full animate-pulse"></div>
-  </div>
+  <>
+    <div className="h-7 bg-gray-200 rounded w-32 animate-pulse"></div>
+    <div className="h-7 bg-gray-200 rounded w-68 animate-pulse"></div>
+  </>
 );
 
 const StatsDisplay = ({ stats, groupCount }) => (
-  <div className="flex items-center justify-center flex-wrap gap-4 text-sm">
-    <span className='font-black'>{groupCount} groups</span>
+  <>
+    <span className='text-xl font-black'>{groupCount} groups</span>
+    <div className="flex items-center gap-4 text-sm text-gray-600">
+      <Chip
+        classNames={{
+          content: "text-white font-semibold",
+        }}
+        className='bg-[#3B4790]'>
+        {stats.totalKanji} 字
+      </Chip>
+      <Chip
+        classNames={{
+          content: "text-white font-semibold",
+        }}
+        className='bg-[#F56A83]'>
+        {stats.percentage}%
+      </Chip>
 
-    <Chip
-      classNames={{
-        content: "text-indigo-900 font-bold",
-      }}
-      className='bg-indigo-400'>
-      {stats.totalKanji} 字
-    </Chip>
+      <Chip
+        classNames={{
+          base: "pl-2",
+          content: "text-white font-semibold",
+        }}
+        startContent={<HiMiniCheckCircle  className='fill-white' />}
+        className='bg-[#1F8A6C]'>
+        {stats.mastered}
+      </Chip>
 
-    <Chip
-      classNames={{
-        base: "pl-2",
-        content: "text-green-900 font-bold",
-      }}
-      startContent={<HiCheckCircle className='fill-green-900' />} 
-      className='bg-green-400'>
-      {stats.mastered}
-    </Chip>
+      <Chip
+        classNames={{
+          base: "pl-2",
+          content: "text-white font-semibold",
+        }}
+        startContent={<HiBookOpen className='fill-white' />}
+        className='bg-[#FF7C37]'>
+        {stats.learning}
+      </Chip>
 
-    <Chip
-      classNames={{
-        base: "pl-2",
-        content: "text-yellow-900 font-bold",
-      }}
-      startContent={<HiBookOpen className='fill-yellow-900' />} 
-      className='bg-yellow-400'>
-      {stats.learning}
-    </Chip>
+    </div>
 
-    <Chip
-      classNames={{
-        content: "text-cyan-900 font-bold",
-      }}
-      className='bg-cyan-400'>
-      {stats.percentage}%
-    </Chip>
-  </div>
+  </>
 );
 
 const LevelSelectorSkeleton = () => (
@@ -155,9 +154,9 @@ export default function LearnPage() {
           headers: {
             'X-API-Token': process.env.NEXT_PUBLIC_API_TOKEN
           }
-        });   
+        });
         const trackData = await trackResponse.json();
-        
+
         let currentMode = 'stats';
         if (trackResponse.ok && trackData.data.track === 'jlpt') {
           setUserTrack(trackData.track);
@@ -191,7 +190,7 @@ export default function LearnPage() {
       } catch (err) {
         setError('Failed to load data');
         console.error('Error fetching data:', err);
-        setMode('stats'); 
+        setMode('stats');
       } finally {
         setLoading(false);
       }
@@ -258,13 +257,13 @@ export default function LearnPage() {
   };
 
   return (
-    <div className="px-4 pb-24 max-w-5xl mx-auto">
-      <div className="flex flex-wrap gap-4 pt-6 justify-center md:justify-between mb-6">
+    <div className="px-8 md:px-4 pb-24 max-w-5xl mx-auto">
+      <div className="flex flex-wrap gap-4 pt-6 justify-start md:justify-between mb-8">
         {loading ? (
           <StatsLoadingSkeleton />
         ) : (
-          <StatsDisplay 
-            stats={stats} 
+          <StatsDisplay
+            stats={stats}
             groupCount={groups.length}
           />
         )}
@@ -273,8 +272,8 @@ export default function LearnPage() {
           loading ? (
             <LevelSelectorSkeleton />
           ) : (
-            <LevelSelector 
-              selectedLevel={selectedLevel} 
+            <LevelSelector
+              selectedLevel={selectedLevel}
               onLevelChange={setSelectedLevel}
             />
           )
