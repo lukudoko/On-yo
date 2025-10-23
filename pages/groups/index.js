@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/router';
 import OnyomiGroupCard from '@/components/onyomigroupcards';
 import { Select, SelectItem, Chip } from "@heroui/react";
 import { HiBookOpen, HiMiniCheckCircle  } from "react-icons/hi2";
@@ -127,9 +128,9 @@ const GroupsGrid = ({ groups, mode, selectedLevel }) => (
 );
 
 export default function LearnPage() {
+  const router = useRouter();
   const [groups, setGroups] = useState([]);
   const [selectedLevel, setSelectedLevel] = useState(() => {
-
     if (typeof window !== 'undefined') {
       return localStorage.getItem('jlptLevel') || '5';
     }
@@ -139,6 +140,7 @@ export default function LearnPage() {
   const [error, setError] = useState(null);
   const [mode, setMode] = useState(null);
   const [userTrack, setUserTrack] = useState('stat');
+  const scrollPosRef = useRef(0);
 
   useEffect(() => {
     localStorage.setItem('jlptLevel', selectedLevel);
@@ -200,36 +202,44 @@ export default function LearnPage() {
     fetchData();
   }, [selectedLevel]);
 
+  // Handle scroll restoration with Next.js router
   useEffect(() => {
-    if ('scrollRestoration' in window.history) {
-      window.history.scrollRestoration = 'manual';
-    }
-
-    const handleBeforeUnload = () => {
+    // Save scroll position before navigating away
+    const handleRouteChangeStart = () => {
+      scrollPosRef.current = window.scrollY;
       sessionStorage.setItem('learnPageScrollY', window.scrollY.toString());
     };
 
-    const restoreScroll = () => {
-      const savedScrollY = sessionStorage.getItem('learnPageScrollY');
-      if (savedScrollY && !loading) {
-        window.scrollTo(0, parseInt(savedScrollY));
-        sessionStorage.removeItem('learnPageScrollY');
+    // Restore scroll after coming back
+    const handleRouteChangeComplete = () => {
+      if (!loading && groups.length > 0) {
+        const savedScroll = sessionStorage.getItem('learnPageScrollY');
+        if (savedScroll) {
+          setTimeout(() => {
+            window.scrollTo(0, parseInt(savedScroll));
+          }, 0);
+        }
       }
     };
 
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    router.events.on('routeChangeStart', handleRouteChangeStart);
+    router.events.on('routeChangeComplete', handleRouteChangeComplete);
 
-    if (!loading) {
-      restoreScroll();
+    // Restore on initial mount (when coming back via browser back button)
+    if (!loading && groups.length > 0) {
+      const savedScroll = sessionStorage.getItem('learnPageScrollY');
+      if (savedScroll && window.scrollY === 0) {
+        setTimeout(() => {
+          window.scrollTo(0, parseInt(savedScroll));
+        }, 100);
+      }
     }
 
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      if ('scrollRestoration' in window.history) {
-        window.history.scrollRestoration = 'auto';
-      }
+      router.events.off('routeChangeStart', handleRouteChangeStart);
+      router.events.off('routeChangeComplete', handleRouteChangeComplete);
     };
-  }, [loading]);
+  }, [router.events, loading, groups]);
 
   const calculateStats = () => {
     if (groups.length === 0) return { totalKanji: 0, mastered: 0, learning: 0, percentage: 0 };
