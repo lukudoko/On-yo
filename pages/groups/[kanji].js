@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import KanjiCard from '@/components/card';
 import { Chip } from '@heroui/react';
 import { HiBookOpen, HiMiniCheckCircle  } from "react-icons/hi2";
+import { useRouter } from 'next/router';
+
 
 export async function getServerSideProps({ params, query }) {
   try {
@@ -23,9 +25,24 @@ export async function getServerSideProps({ params, query }) {
 }
 
 export default function KanjiGroupPage({ onyomi, initialJlptFilter }) {
+  const router = useRouter();
   const [groupData, setGroupData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const handleRouteChange = () => {
+      window.scrollTo(0, 0);
+    };
+
+    // Scroll to top on initial load
+    window.scrollTo(0, 0);
+
+    router.events.on('routeChangeComplete', handleRouteChange);
+    return () => {
+      router.events.off('routeChangeComplete', handleRouteChange);
+    };
+  }, [router.events]);
 
   useEffect(() => {
     const fetchGroupData = async () => {
