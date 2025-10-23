@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { motion } from 'framer-motion';
 import { Button, CircularProgress, Modal, useDisclosure, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/react';
 import { HiBookOpen, HiMiniCheckCircle, HiMiniQuestionMarkCircle } from "react-icons/hi2";
+import { startOfWeek, isWithinInterval, subWeeks } from 'date-fns';
 
 const apiHeaders = {
   'Content-Type': 'application/json',
@@ -106,11 +107,40 @@ export default function Home() {
     );
   }
 
-  const { progress, nextGroup, stats, recentActivity, weeklyStats, track } = dashboardData;
+  const { progress, nextGroup, stats, weeklyStats, track } = dashboardData;
   const completionPercentage = Math.round((progress.mastered / Math.max(progress.total, 1)) * 100);
   const groupsPercentage = Math.round((stats.completedGroups / Math.max(stats.totalGroups, 1)) * 100);
 
-  // Animation variants
+  function calculateWeeklyStats(timestamps) {
+    if (!timestamps || timestamps.length === 0) {
+      return { thisWeek: 0, lastWeek: 0 };
+    }
+
+    const now = new Date();
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(now.getDate() - 7);
+
+    const fourteenDaysAgo = new Date(now);
+    fourteenDaysAgo.setDate(now.getDate() - 14);
+
+    let last7Days = 0;
+    let previous7Days = 0;
+
+    timestamps.forEach(timestamp => {
+      const date = new Date(timestamp);
+
+      if (date >= sevenDaysAgo) {
+        last7Days++;
+      } else if (date >= fourteenDaysAgo && date < sevenDaysAgo) {
+        previous7Days++;
+      }
+    });
+
+    return { thisWeek: last7Days, lastWeek: previous7Days };
+  }
+
+  const weeklyStatsCalculated = calculateWeeklyStats(weeklyStats);
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -135,7 +165,6 @@ export default function Home() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      {/* Animated greeting */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -148,8 +177,6 @@ export default function Home() {
           </p>
         )}
       </motion.div>
-
-      {/* Animated grid */}
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -255,21 +282,21 @@ export default function Home() {
           {weeklyStats && (
             <div className="flex justify-center flex-col p-4 bg-[#3B479010]  rounded-3xl text-xs">
               <div className="flex justify-between">
-                <span className="font-bold">This week:</span>
-                <span className="font-semibold text-[#3B4790]">{weeklyStats.thisWeek} kanji</span>
+                <span className="font-bold">Last 7 days:</span>
+                <span className="font-semibold text-[#3B4790]">{weeklyStatsCalculated.thisWeek} kanji</span>
               </div>
               <div className="flex justify-between mt-1">
-                <span className="font-bold text-gray-600">Last week:</span>
-                <span className="font-semibold text-gray-600">{weeklyStats.lastWeek} kanji</span>
+                <span className="font-bold text-gray-600">Previous 7 days:</span>
+                <span className="font-semibold text-gray-600">{weeklyStatsCalculated.lastWeek} kanji</span>
               </div>
-              {weeklyStats.thisWeek > weeklyStats.lastWeek && (
+              {weeklyStatsCalculated.thisWeek > weeklyStatsCalculated.lastWeek && (
                 <div className="mt-1 text-green-600 font-medium text-center">
                   {weeklyStats.lastWeek === 0 ? (
                     "Great start this week!"
-                  ) : Math.round(((weeklyStats.thisWeek - weeklyStats.lastWeek) / weeklyStats.lastWeek) * 100) > 500 ? (
+                  ) : Math.round(((weeklyStatsCalculated.thisWeek - weeklyStatsCalculated.lastWeek) / weeklyStatsCalculated.lastWeek) * 100) > 500 ? (
                     "Keep it up!"
                   ) : (
-                    `↑ ${Math.round(((weeklyStats.thisWeek - weeklyStats.lastWeek) / weeklyStats.lastWeek) * 100)}% improvement!`
+                    `↑ ${Math.round(((weeklyStatsCalculated.thisWeek - weeklyStatsCalculated.lastWeek) / weeklyStatsCalculated.lastWeek) * 100)}% improvement!`
                   )}
                 </div>
               )}

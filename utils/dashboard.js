@@ -95,42 +95,28 @@ async function getRecentActivity(userId, limit = 5) {
 
 async function getWeeklyStats(userId) {
   if (!userId) {
-    return { thisWeek: 0, lastWeek: 0 };
+    return [];
   }
-
+  
   try {
-    const now = new Date();
-
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - now.getDay());
-    startOfWeek.setHours(0, 0, 0, 0);
-
-    const startOfLastWeek = new Date(startOfWeek);
-    startOfLastWeek.setDate(startOfWeek.getDate() - 7);
-
-    const [thisWeekCount, lastWeekCount] = await Promise.all([
-      prisma.userProgress.count({
-        where: {
-          userId: userId,
-          lastStudied: { gte: startOfWeek },
-          masteryLevel: { in: [1, 2] }
-        }
-      }),
-      prisma.userProgress.count({
-        where: {
-          userId: userId,
-          lastStudied: {
-            gte: startOfLastWeek,
-            lt: startOfWeek
-          },
-          masteryLevel: { in: [1, 2] }
-        }
-      })
-    ]);
-
-    return { thisWeek: thisWeekCount, lastWeek: lastWeekCount };
+    // Get all progress from the last 14 days
+    const fourteenDaysAgo = new Date();
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+    
+    const recentProgress = await prisma.userProgress.findMany({
+      where: {
+        userId: userId,
+        lastStudied: { gte: fourteenDaysAgo },
+        masteryLevel: { in: [1, 2] }
+      },
+      select: {
+        lastStudied: true
+      }
+    });
+    
+    return recentProgress.map(p => p.lastStudied.toISOString());
   } catch (error) {
     console.error("Error getting weekly stats:", error);
-    return { thisWeek: 0, lastWeek: 0 };
+    return [];
   }
 }
