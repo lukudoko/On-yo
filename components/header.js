@@ -4,55 +4,56 @@ import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { Popover, PopoverTrigger, PopoverContent, Button, Spinner } from "@heroui/react";
 import { motion } from "framer-motion";
+import { useStats } from '@/contexts/stats';
 
 export default function Header() {
   const { data: session, status } = useSession();
-  const [stats, setStats] = useState(null);
-  const [loadingStats, setLoadingStats] = useState(false);
-  const [error, setError] = useState(null); 
+  const { stats, loading: loadingStats, error, fetchStats } = useStats();
   const [isOpen, setIsOpen] = useState(false);
-  const previousIsOpenRef = useRef(isOpen); 
+  const previousIsOpenRef = useRef(isOpen);
 
   useEffect(() => {
     if (status === "authenticated" && !stats && !loadingStats) {
       fetchStats();
     }
-  }, [status, stats, loadingStats]);
+  }, [status, stats, loadingStats, fetchStats]);
 
   useEffect(() => {
     if (isOpen && !previousIsOpenRef.current && status === "authenticated") {
       fetchStats();
     }
     previousIsOpenRef.current = isOpen;
-  }, [isOpen, status]);
-
-  const fetchStats = async () => {
-    if (loadingStats) return;
-    setLoadingStats(true);
-    setError(null);
-    try {
-      const response = await fetch("/api/stats/header", {
-        headers: {
-          'X-API-Token': process.env.NEXT_PUBLIC_API_TOKEN
-        }
-      });
-      const json = await response.json();
-      if (json.success) {
-        setStats(json.data);
-      } else {
-        setError(json.message || "Failed to load stats");
-      }
-    } catch (error) {
-      console.error("Error fetching stats:", error);
-      setError("Network error. Please try again.");
-    } finally {
-      setLoadingStats(false);
-    }
-  };
+  }, [isOpen, status, fetchStats]);
 
   const handleOpenChange = (open) => {
     setIsOpen(open);
   };
+
+  const getHeaderStats = () => {
+    if (!stats) return null;
+
+    if (stats.track === 'jlpt') {
+      return {
+        primary: stats.jlptLevel,
+        primaryLabel: 'JLPT Level',
+        secondary: stats.progress.mastered,
+        secondaryLabel: 'Mastered Kanji',
+        tertiary: `${stats.progress.mastered}/${stats.progress.total}`,
+        tertiaryLabel: 'Total Progress'
+      };
+    } else {
+      return {
+        primary: stats.trackSpecificStats.completedGroups || 0,
+        primaryLabel: 'Groups Completed',
+        secondary: stats.progress.mastered,
+        secondaryLabel: 'Mastered Kanji',
+        tertiary: `${stats.progress.mastered}/${stats.progress.total}`,
+        tertiaryLabel: 'Total Progress'
+      };
+    }
+  };
+
+  const headerStats = getHeaderStats();
 
   return (
     <div className="fixed bg-[#f9f4ed] xl:bg-transparent z-50 flex w-full items-center justify-between top-0 py-3 px-8">
@@ -104,14 +105,24 @@ export default function Header() {
                 </div>
               ) : stats ? (
                 <div className="space-y-3 py-4 w-full">
-                  <div className="flex mb-2 justify-between items-center">
-                    <div>
-                      <span className="text-xl font-bold text-[#3B4790]">{stats.kanjiMastered}</span>
-                      <span className="text-xs"> / {stats.totalKanji} kanji</span>
+                  <div className="grid grid-cols-1 gap-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">{headerStats.primaryLabel}</span>
+                      <span className="text-lg font-bold text-[#6A7FDB]">{headerStats.primary}</span>
                     </div>
-                    <div>
-                      <span className="text-xl font-bold text-[#F56A83]">{stats.groupsCompleted}</span>
-                      <span className="text-xs"> / {stats.totalGroups} groups</span>
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">{headerStats.secondaryLabel}</span>
+                      <span className="text-lg font-bold text-[#F56A83]">{headerStats.secondary}</span>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">{headerStats.tertiaryLabel}</span>
+                      <span className="text-sm font-medium text-gray-700">{headerStats.tertiary}</span>
+                    </div>
+
+                    <div className="pt-2 text-xs text-gray-500 text-center">
+                      Track: {stats.track === 'jlpt' ? 'JLPT Order' : 'Frequency Order'}
                     </div>
                   </div>
                 </div>

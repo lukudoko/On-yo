@@ -52,7 +52,7 @@ export default function OnyomiGroupCard({
             >
               <div className="flex h-full w-full">
                 <motion.div 
-                  className="bg-[#1F8A6C] flex items-center justify-center"
+                  className="bg-[#26A682] flex items-center justify-center"
                   style={{ width: `${(mastered / totalKanji) * 100}%` }}
                 >
                   {mastered > 0 && (
@@ -69,7 +69,7 @@ export default function OnyomiGroupCard({
                   )}
                 </motion.div>
                 <motion.div 
-                  className="bg-[#FF7C37] flex items-center justify-center"
+                  className="bg-[#FE9D0B] flex items-center justify-center"
                   style={{ width: `${(learning / totalKanji) * 100}%` }}
                 >
                   {learning > 0 && (
@@ -86,7 +86,7 @@ export default function OnyomiGroupCard({
                   )}
                 </motion.div>
                 <motion.div 
-                  className="bg-[#E72C3A] flex items-center justify-center"
+                  className="bg-[#EB4752] flex items-center justify-center"
                   style={{ width: `${(unlearned / totalKanji) * 100}%` }}
                 >
                   {unlearned > 0 && (

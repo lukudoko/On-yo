@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma';
 import { ProgressService, getUserId } from '@/utils/progress';
 import { getGroupStats } from '@/utils/groupstats';
+import { getUserJlptLevel, getUserJlptProgress } from '@/utils/jlpt';
+
 import { findIntelligentNextGroup } from '@/utils/recommendation';
 
 export async function getDashboardData(req, res) {
@@ -12,111 +14,54 @@ export async function getDashboardData(req, res) {
       return null;
     }
 
-    // Fetch the user's track preference
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { track: true }
     });
 
-    const userTrack = user?.track || 'stat'; // Default to 'stat' if not set
+    const userTrack = user?.track || 'stat';
 
     const [
       progress,
       totalGroups,
       intelligentNextGroup,
       groupStats,
-      recentActivity,
-      weeklyStats
+      jlptLevel,
+      jlptProgress
     ] = await Promise.all([
       ProgressService.getOverallProgress(userId),
       prisma.onyomiGroup.count(),
-      findIntelligentNextGroup(userId, userTrack), // Use the user's track preference
+      findIntelligentNextGroup(userId, userTrack),
       getGroupStats(userId),
-      getRecentActivity(userId),
-      getWeeklyStats(userId)
+      getUserJlptLevel(userId),
+      userTrack === 'jlpt' ? getUserJlptProgress(userId) : Promise.resolve(null)
     ]);
 
-    const nextGroupToUse = intelligentNextGroup;
-
-    return {
-      progress: progress,
-      nextGroup: nextGroupToUse,
-      stats: {
-        totalKanji: progress.total,
-        masteredKanji: progress.mastered,
-        totalGroups: totalGroups,
+    // Track-specific stats
+    let trackSpecificStats = {};
+    
+    if (userTrack === 'jlpt') {
+      trackSpecificStats = jlptProgress;
+    } else {
+      // Keep group stats for 'stat' track
+      trackSpecificStats = {
+        totalGroups,
         completedGroups: groupStats.completedGroups,
         inProgressGroups: groupStats.inProgressGroups
-      },
-      recentActivity: recentActivity,
-      weeklyStats: weeklyStats
+      };
+    }
+
+    return {
+      progress,
+      nextGroup: intelligentNextGroup,
+      track: userTrack,
+      jlptLevel,
+      trackSpecificStats,
+     // streak: await calculateCurrentStreak(userId)
     };
 
   } catch (error) {
     console.error("Error in getDashboardData utility:", error);
     return null;
-  }
-}
-
-// Keep your helper functions in this file
-async function getRecentActivity(userId, limit = 5) {
-  if (!userId) return [];
-
-  try {
-    const recentProgress = await prisma.userProgress.findMany({
-      where: { userId: userId },
-      orderBy: { lastStudied: 'desc' },
-      take: limit,
-      select: {
-        kanji: {
-          select: {
-            character: true,
-            primary_onyomi: true,
-            jlpt_new: true
-          }
-        },
-        masteryLevel: true,
-        lastStudied: true
-      }
-    });
-
-    return recentProgress.map(item => ({
-      kanji: item.kanji.character,
-      onyomi: item.kanji.primary_onyomi,
-      jlptLevel: item.kanji.jlpt_new,
-      masteryLevel: item.masteryLevel,
-      lastStudied: item.lastStudied ? item.lastStudied.toISOString() : null
-    }));
-  } catch (error) {
-    console.error("Error getting recent activity:", error);
-    return [];
-  }
-}
-
-async function getWeeklyStats(userId) {
-  if (!userId) {
-    return [];
-  }
-  
-  try {
-    // Get all progress from the last 14 days
-    const fourteenDaysAgo = new Date();
-    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-    
-    const recentProgress = await prisma.userProgress.findMany({
-      where: {
-        userId: userId,
-        lastStudied: { gte: fourteenDaysAgo },
-        masteryLevel: { in: [1, 2] }
-      },
-      select: {
-        lastStudied: true
-      }
-    });
-    
-    return recentProgress.map(p => p.lastStudied.toISOString());
-  } catch (error) {
-    console.error("Error getting weekly stats:", error);
-    return [];
   }
 }

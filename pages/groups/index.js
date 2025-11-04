@@ -43,7 +43,7 @@ const StatsDisplay = ({ stats, groupCount }) => (
         classNames={{
           content: "text-white font-semibold",
         }}
-        className='bg-[#3B4790]'>
+        className='bg-[#6A7FDB]'>
         {stats.totalKanji} 字
       </Chip>
       <Chip
@@ -60,7 +60,7 @@ const StatsDisplay = ({ stats, groupCount }) => (
           content: "text-white font-semibold",
         }}
         startContent={<HiMiniCheckCircle  className='fill-white' />}
-        className='bg-[#1F8A6C]'>
+        className='bg-[#26A682]'>
         {stats.mastered}
       </Chip>
 
@@ -70,7 +70,7 @@ const StatsDisplay = ({ stats, groupCount }) => (
           content: "text-white font-semibold",
         }}
         startContent={<HiBookOpen className='fill-white' />}
-        className='bg-[#FF7C37]'>
+        className='bg-[#FE9D0B]'>
         {stats.learning}
       </Chip>
 

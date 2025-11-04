@@ -161,7 +161,7 @@ export default function KanjiTest() {
             </div>
           </div>
 
-          <Button className='bg-[#3B479020] font-semibold' onPress={finishTest} >
+          <Button className='bg-[#6A7FDB20] font-semibold' onPress={finishTest} >
             Back to Dash
           </Button>
 
@@ -174,7 +174,7 @@ export default function KanjiTest() {
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.3, delay: index * 0.02 }}
-                    className={`p-4 flex flex-col justify-center items-center rounded-2xl ${result.isCorrect ? 'bg-[#1F8A6C20]' : 'bg-[#E72C3A20]'}`}
+                    className={`p-4 flex flex-col justify-center items-center rounded-2xl ${result.isCorrect ? 'bg-[#26A68220]' : 'bg-[#EB475220]'}`}
                   >
                     <span className="text-2xl font-jp-round font-bold">{testData.find(k => k.kanjiId === result.kanjiId)?.kanji.character}</span>
                     {!result.isCorrect && (
@@ -245,8 +245,8 @@ export default function KanjiTest() {
                     onPress={() => setSelectedAnswer(option)}
                     size="lg"
                     className={`w-full font-bold text-lg ${selectedAnswer === option
-                      ? 'bg-[#3B4790] text-white '
-                      : 'bg-[#3B479020] text-black'
+                      ? 'bg-[#6A7FDB] text-white '
+                      : 'bg-[#6A7FDB20] text-black'
                       }`}
                   >
                     {option}
@@ -271,7 +271,7 @@ export default function KanjiTest() {
             <div className="flex justify-center gap-4">
               <Button
                 type="submit"
-                className='bg-[#3B479020] font-semibold w-32'
+                className='bg-[#6A7FDB20] font-semibold w-32'
                 isDisabled={
                   currentKanji.testType === 'write-in'
                     ? !selectedAnswer.trim()
@@ -286,7 +286,7 @@ export default function KanjiTest() {
                 currentKanji.hints.length > 0 && (
                   <Popover size="lg" placement="top">
                     <PopoverTrigger>
-                      <Button className='bg-[#3B479020] font-semibold'>Hint</Button>
+                      <Button className='bg-[#6A7FDB20] font-semibold'>Hint</Button>
                     </PopoverTrigger>
                     <PopoverContent className=" flex flex-col mt-2 p-6">
                       <div className="text-sm font-bold mb-3">Same reading as:</div>
@@ -294,7 +294,7 @@ export default function KanjiTest() {
                         {currentKanji.hints.map((hint, index) => (
                           <span
                             key={index}
-                            className="font-jp-round bg-[#3B479010] rounded-lg p-2 text-2xl"
+                            className="font-jp-round bg-[#6A7FDB10] rounded-lg p-2 text-2xl"
                           >
                             {hint}
                           </span>
@@ -310,7 +310,7 @@ export default function KanjiTest() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ type: "spring", bounce: 0.25 }}
-            className={`rounded-3xl flex flex-col gap-4 items-center p-6 ${isCorrect ? 'bg-[#1F8A6C20]' : 'bg-[#E72C3A20]'}`}
+            className={`rounded-3xl flex flex-col gap-4 items-center p-6 ${isCorrect ? 'bg-[#26A68220]' : 'bg-[#EB475220]'}`}
           >
             <div className="text-center">
               <div className={`text-2xl font-bold ${isCorrect ? 'text-green-600' : 'text-red-600'}`}>
@@ -321,7 +321,7 @@ export default function KanjiTest() {
               </div>
             </div>
 
-            <Button onPress={handleNext} className='bg-[#3B479020] font-semibold w-32'>
+            <Button onPress={handleNext} className='bg-[#6A7FDB20] font-semibold w-32'>
               {currentQuestion < testData.length - 1 ? 'Next Question' : 'See Results'}
             </Button>
           </motion.div>

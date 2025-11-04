@@ -76,17 +76,17 @@ const KanjiCard = ({
     switch (level) {
       case 2:
         return {
-          color: 'bg-[#1F8A6C]',
+          color: 'bg-[#26A682]',
           title: 'Mastered!',
         };
       case 1:
         return {
-          color: 'bg-[#FF7C37]',
+          color: 'bg-[#FE9D0B]',
           title: 'Learning',
         };
       default:
         return {
-          color: 'bg-[#E72C3A]',
+          color: 'bg-[#EB4752]',
           title: "Don't Know",
         };
     }
@@ -170,7 +170,7 @@ const KanjiCard = ({
                       <Chip
                         size='sm'
                         classNames={{
-                          base: "bg-[#3B4790]",
+                          base: "bg-[#6A7FDB]",
                           content: "font-bold text-white",
                         }}
                       > #{freq_score}</Chip>
@@ -202,14 +202,14 @@ const KanjiCard = ({
                   transition={{ delay: 0.1, duration: 0.3 }}
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div className="bg-[#F56A8315] rounded-2xl p-4">
+                    <div className="bg-[#6A7FDB15] rounded-2xl p-4">
                       <h3 className="font-bold mb-3 text-base tracking-wide">Onyomi</h3>
                       <div className="font-jp-round text-gray-700 text-lg font-light flex flex-wrap gap-2">
                         {formatReadings(readings_on)}
                       </div>
                     </div>
 
-                    <div className="bg-[#F56A8315]  rounded-2xl p-4">
+                    <div className="bg-[#6A7FDB15]  rounded-2xl p-4">
                       <h3 className="font-bold mb-3 text-base  tracking-wide">Kunyomi</h3>
                       <div className="font-jp-round text-gray-700 text-lg font-light flex flex-wrap gap-2">
                         {formatReadings(readings_kun)}
@@ -217,14 +217,14 @@ const KanjiCard = ({
                     </div>
                   </div>
 
-                  <div className="bg-[#F56A8315] rounded-2xl p-4 mb-6">
+                  <div className="bg-[#6A7FDB15] rounded-2xl p-4 mb-6">
                     <h3 className="font-bold mb-3 text-base tracking-wide">Meanings</h3>
                     <p className="text-gray-700 text-sm flex flex-wrap">
                       {formatReadings(meanings)}
                     </p>
                   </div>
                   {exampleWords && exampleWords.length > 0 && (
-                    <div className="bg-[#F56A8315] rounded-2xl p-4 mb-6">
+                    <div className="bg-[#6A7FDB15] rounded-2xl p-4 mb-6">
                       <h3 className=" font-semibold mb-3 text-base tracking-wide">Example Words</h3>
                       <div className="grid md:grid-cols-3  grid-cols-2 gap-3">
                         {exampleWords.map((word, index) => {
@@ -259,7 +259,7 @@ const KanjiCard = ({
                 <div className="flex justify-center gap-4">
                   <Button
                     isIconOnly
-                    className="font-medium bg-[#1F8A6C] text-white"
+                    className="font-medium bg-[#26A682] text-white"
                     onPress={() => handleMasteryUpdate(2)}
                     isDisabled={isUpdating || masteryLevel === 2}
                     isLoading={isUpdating && masteryLevel === 2}
@@ -268,7 +268,7 @@ const KanjiCard = ({
                     <HiMiniCheckCircle  size={22} />
                   </Button>
                   <Button
-                    className="font-medium bg-[#FF7C37] text-white"
+                    className="font-medium bg-[#FE9D0B] text-white"
                     onPress={() => handleMasteryUpdate(1)}
                     isIconOnly
                     isDisabled={isUpdating || masteryLevel === 1}
@@ -279,7 +279,7 @@ const KanjiCard = ({
                   </Button>
                   <Button
                     isIconOnly
-                    className="font-medium bg-[#E72C3A] text-white"
+                    className="font-medium bg-[#EB4752] text-white"
                     onPress={() => handleMasteryUpdate(0)}
                     isDisabled={isUpdating || masteryLevel === 0}
                     isLoading={isUpdating && masteryLevel === 0}

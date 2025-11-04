@@ -130,7 +130,7 @@ export default function KanjiGroupPage({ onyomi, initialJlptFilter }) {
             classNames={{
               content: "text-white font-semibold",
             }}
-            className='bg-[#3B4790]'>
+            className='bg-[#6A7FDB]'>
             {totalKanji} 字
           </Chip>
           <Chip
@@ -147,7 +147,7 @@ export default function KanjiGroupPage({ onyomi, initialJlptFilter }) {
               content: "text-white font-semibold",
             }}
             startContent={<HiMiniCheckCircle  className='fill-white' />}
-            className='bg-[#1F8A6C]'>
+            className='bg-[#26A682]'>
             {masteredCount}
           </Chip>
 
@@ -157,7 +157,7 @@ export default function KanjiGroupPage({ onyomi, initialJlptFilter }) {
               content: "text-white font-semibold",
             }}
             startContent={<HiBookOpen className='fill-white' />}
-            className='bg-[#FF7C37]'>
+            className='bg-[#FE9D0B]'>
             {learningCount}
           </Chip>
         </div>
