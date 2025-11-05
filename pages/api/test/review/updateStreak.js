@@ -1,5 +1,6 @@
 import { getUserId } from '@/utils/progress';
 import { prisma } from '@/lib/prisma';
+import { updateStreak } from '@/utils/streak';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -78,6 +79,8 @@ export default async function handler(req, res) {
         lastStudied: new Date()
       }
     });
+
+    await updateStreak(userId);
 
     return res.status(200).json({
       success: true,

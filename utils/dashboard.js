@@ -1,9 +1,9 @@
+// In your dashboard utils file (utils/dashboard.js)
 import { prisma } from '@/lib/prisma';
 import { ProgressService, getUserId } from '@/utils/progress';
 import { getGroupStats } from '@/utils/groupstats';
-import { getUserJlptLevel, getUserJlptProgress } from '@/utils/jlpt';
-
 import { findIntelligentNextGroup } from '@/utils/recommendation';
+import { getUserJlptLevel, getUserJlptProgress } from '@/utils/jlpt';
 
 export async function getDashboardData(req, res) {
   try {
@@ -16,7 +16,7 @@ export async function getDashboardData(req, res) {
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { track: true }
+      select: { track: true, streak: true } // Add streak to selection
     });
 
     const userTrack = user?.track || 'stat';
@@ -43,7 +43,6 @@ export async function getDashboardData(req, res) {
     if (userTrack === 'jlpt') {
       trackSpecificStats = jlptProgress;
     } else {
-      // Keep group stats for 'stat' track
       trackSpecificStats = {
         totalGroups,
         completedGroups: groupStats.completedGroups,
@@ -57,7 +56,7 @@ export async function getDashboardData(req, res) {
       track: userTrack,
       jlptLevel,
       trackSpecificStats,
-     // streak: await calculateCurrentStreak(userId)
+      streak: user?.streak || 0 // Include streak in response
     };
 
   } catch (error) {

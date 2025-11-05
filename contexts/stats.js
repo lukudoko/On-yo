@@ -13,7 +13,7 @@ export function StatsProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/stats", {
+      const response = await fetch("/api/user/stats", {
         headers: {
           'X-API-Token': process.env.NEXT_PUBLIC_API_TOKEN
         }

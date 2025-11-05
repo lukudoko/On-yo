@@ -87,7 +87,7 @@ const KanjiCard = ({
       default:
         return {
           color: 'bg-[#EB4752]',
-          title: "Don't Know",
+          title: "Not Yet Learned",
         };
     }
   };

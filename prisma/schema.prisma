@@ -32,12 +32,14 @@ model OnyomiGroup {
 }
 
 model User {
-  id        String         @id
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-  track     String         @default("stat") // Add this line
-  progress  UserProgress[]
-  Session   Session[]
+  id            String         @id
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  track         String         @default("stat")
+  lastStudyDate DateTime?      // Add this - when we last recorded their study streak
+  streak        Int            @default(0)  // Add this - their current streak count
+  progress      UserProgress[]
+  Session       Session[]
 }
 
 model Session {

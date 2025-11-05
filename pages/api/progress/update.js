@@ -1,4 +1,5 @@
 import { ProgressService, getUserId } from '@/utils/progress';
+import { updateStreak } from '@/utils/streak';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -32,6 +33,7 @@ export default async function handler(req, res) {
     }
 
     const result = await ProgressService.updateKanjiMastery(userId, kanji, masteryLevel);
+    await updateStreak(userId);
 
     res.status(200).json({ success: true, result });
   } catch (error) {

@@ -34,7 +34,7 @@ export default function KanjiTest() {
     const loadTestData = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/test/review/testselect', {
+        const response = await fetch('/api/test/review/selection', {
           headers: {
             'x-api-token': process.env.NEXT_PUBLIC_API_TOKEN
           }

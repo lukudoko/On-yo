@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 import {
@@ -13,6 +13,7 @@ import {
   ModalFooter,
 } from "@heroui/react";
 import { useStats } from "@/contexts/stats";
+import { HiBookOpen, HiMiniCheckCircle, HiMiniQuestionMarkCircle } from "react-icons/hi2";
 
 const apiHeaders = {
   "Content-Type": "application/json",
@@ -24,6 +25,13 @@ export default function Home() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [changingTrack, setChangingTrack] = useState(false);
   const { stats: dashboardData, error, refreshStats } = useStats();
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      refreshStats();
+    }
+  }, [status]);
+
 
   const changeTrack = async (newTrack) => {
     setChangingTrack(true);
@@ -80,7 +88,7 @@ export default function Home() {
     );
   }
 
-  const { progress, nextGroup, weeklyStats, track } = dashboardData;
+  const { progress, nextGroup, trackSpecificStats, streak, weeklyStats, track } = dashboardData;
   const completionPercentage = Math.round(
     (progress.mastered / Math.max(progress.total, 1)) * 100
   );
@@ -172,53 +180,46 @@ export default function Home() {
             <span className="text-sm text-gray-500 ml-2">of joyou kanji</span>
           </div>
 
-          <div className="flex overflow-hidden w-10/12 mx-auto rounded-full h-6 mb-4">
+          <div className="w-10/12 mx-auto mb-6">
+            <div className="flex overflow-hidden rounded-full h-6">
               <div
                 className="bg-[#26A682] flex items-center justify-center"
-                style={{
-                  width: `${(progress.mastered / progress.total) * 100}%`,
-                }}
-              >
-                {progress.mastered > 0 && (
-                  <span className="text-white text-xs font-bold">
-                    {progress.mastered}
-                  </span>
-                )}
-              </div>
+                style={{ width: `${(progress.mastered / progress.total) * 100}%` }}
+              />
               <div
                 className="bg-[#FE9D0B] flex items-center justify-center"
-                style={{
-                  width: `${(progress.learning / progress.total) * 100}%`,
-                }}
-              >
-                {progress.learning > 0 && (
-                  <span className="text-white text-xs font-bold">
-                    {progress.learning}
-                  </span>
-                )}
-              </div>
+                style={{ width: `${(progress.learning / progress.total) * 100}%` }}
+              />
               <div
                 className="bg-[#EB4752] flex items-center justify-center"
-                style={{
-                  width: `${(progress.unlearned / progress.total) * 100}%`,
-                }}
-              >
-                {progress.unlearned > 0 && (
-                  <span className="text-white text-xs font-bold">
-                    {progress.unlearned}
-                  </span>
-                )}
+                style={{ width: `${(progress.unlearned / progress.total) * 100}%` }}
+              />
+            </div>
+
+            <div className="flex justify-evenly text-xs">
+              <div className="flex justify-center gap-x-1 items-center p-2">
+                <HiMiniCheckCircle className="fill-[#26A682]" />
+                <span className="text-lg font-black decoration-2 underline text-[#26A682]">{progress.mastered}</span>
               </div>
-           
+
+              <div className="flex  justify-center gap-x-1 items-center p-2 rounded-2xl">
+                <HiBookOpen className="fill-[#FE9D0B]" />
+                <span className="text-lg font-black decoration-2 underline text-[#FE9D0B]">{progress.learning}</span>
+              </div>
+              <div className="flex  justify-center gap-x-1 items-center p-2">
+                <HiMiniQuestionMarkCircle className="fill-[#EB4752]" />
+                <span className="text-lg  font-black decoration-2 underline  text-[#EB4752]">{progress.unlearned}</span>
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-3 gap-4 mb-4">
             <div className="text-center p-3 bg-[#6A7FDB15] rounded-xl">
-              <div className="text-2xl font-bold text-[#26A682]">10</div>
+              <div className="text-2xl font-bold text-[#6A7FDB]">10</div>
               <div className="text-xs text-gray-500">this week</div>
             </div>
             <div className="text-center p-3 bg-[#6A7FDB15] rounded-xl">
-              <div className="text-2xl font-bold text-[#FE9D0B]">5</div>
+              <div className="text-2xl font-bold text-[#F56A83]">{streak}</div>
               <div className="text-xs text-gray-500">day streak</div>
             </div>
             <div className="text-center p-3 bg-[#6A7FDB15] rounded-xl">
@@ -231,8 +232,28 @@ export default function Home() {
 
           {track === "jlpt" && (
             <div className="mt-auto">
-              <h4 className="font-semibold mb-2">JLPT Progress</h4>
-              <div className="space-y-2"></div>
+              <h4 className="font-semibold mb-2">JLPT Levels</h4>
+              <div className="flex justify-between items-end space-x-2"> {/* Added gap with space-x-2 */}
+                {[5, 4, 3, 2, 1].map((level) => {
+                  const levelData = trackSpecificStats[`n${level}`];
+                  if (!levelData) return null;
+
+                  const height = `${Math.max(10, levelData.percentage)}%`;
+
+                  return (
+                    <div key={level} className="flex flex-col items-center flex-1">
+                      <div className="text-xs mb-1">N{level}</div>
+                      <div className="w-3/4 bg-gray-200 rounded-lg overflow-hidden h-10 flex items-end"> {/* Slimmer width and height */}
+                        <div
+                          className="bg-[#6A7FDB] w-full transition-all duration-300"
+                          style={{ height }}
+                        ></div>
+                      </div>
+                      <div className="text-xs mt-1 font-medium">{levelData.percentage}%</div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 
