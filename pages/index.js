@@ -88,7 +88,7 @@ export default function Home() {
     );
   }
 
-  const { progress, nextGroup, trackSpecificStats, streak, weeklyStats, track } = dashboardData;
+  const { progress, nextGroup, trackSpecificStats, streak, kanjiThisWeek, track } = dashboardData;
   const completionPercentage = Math.round(
     (progress.mastered / Math.max(progress.total, 1)) * 100
   );
@@ -215,7 +215,7 @@ export default function Home() {
 
           <div className="grid grid-cols-3 gap-4 mb-4">
             <div className="text-center p-3 bg-[#6A7FDB15] rounded-xl">
-              <div className="text-2xl font-bold text-[#6A7FDB]">10</div>
+              <div className="text-2xl font-bold text-[#6A7FDB]">{kanjiThisWeek}</div>
               <div className="text-xs text-gray-500">this week</div>
             </div>
             <div className="text-center p-3 bg-[#6A7FDB15] rounded-xl">

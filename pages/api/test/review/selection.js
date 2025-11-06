@@ -1,6 +1,6 @@
 import { getUserId } from '@/utils/progress';
 import { prisma } from '@/lib/prisma';
-import { getTestableKanji } from '@/utils/test';
+import { getTestableKanji } from '@/utils/reviewtest';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -51,9 +51,15 @@ export default async function handler(req, res) {
     let selectedKanji = [];
 
     if (learningKanji.length > 0) {
-      const numLearningToInclude = Math.min(learningKanji.length, Math.max(3, Math.floor(allTestable.length * 0.2)));
+
+      const minLearning = 3;
+      const maxLearningFromPercentage = Math.floor(15 * 0.7);
+      const maxLearning = Math.min(learningKanji.length, maxLearningFromPercentage);
+
+      const targetLearning = Math.max(minLearning, Math.min(maxLearning, Math.floor(Math.random() * (maxLearning - minLearning + 1)) + minLearning));
+
       const shuffledLearning = [...learningKanji].sort(() => 0.5 - Math.random());
-      selectedKanji.push(...shuffledLearning.slice(0, numLearningToInclude));
+      selectedKanji.push(...shuffledLearning.slice(0, targetLearning));
     }
 
     const remainingSlots = 15 - selectedKanji.length;
@@ -63,10 +69,8 @@ export default async function handler(req, res) {
       selectedKanji.push(...additionalKnown);
     }
 
-    selectedKanji = selectedKanji.sort(() => 0.5 - Math.random());
-
+    selectedKanji = [...selectedKanji].sort(() => 0.5 - Math.random());
     selectedKanji = selectedKanji.slice(0, 15);
-
     const kanjiWithOptions = await Promise.all(selectedKanji.map(async (progress) => {
 
       const isWriteIn = Math.random() < 0.5;
@@ -120,7 +124,6 @@ export default async function handler(req, res) {
     let writeInCount = kanjiWithOptions.filter(k => k.testType === 'write-in').length;
 
     if (multipleChoiceCount < 5) {
-
       const writeIns = kanjiWithOptions.filter(k => k.testType === 'write-in');
       const toConvert = Math.min(writeIns.length, 5 - multipleChoiceCount);
 
@@ -136,8 +139,9 @@ export default async function handler(req, res) {
           ...wrongReadings
         ].sort(() => 0.5 - Math.random());
       }
-    } else if (writeInCount < 3) {
+    }
 
+    if (writeInCount < 3) {
       const multipleChoices = kanjiWithOptions.filter(k => k.testType === 'multiple-choice');
       const toConvert = Math.min(multipleChoices.length, 3 - writeInCount);
 

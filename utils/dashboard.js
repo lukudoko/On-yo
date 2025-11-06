@@ -1,9 +1,9 @@
-// In your dashboard utils file (utils/dashboard.js)
 import { prisma } from '@/lib/prisma';
 import { ProgressService, getUserId } from '@/utils/progress';
 import { getGroupStats } from '@/utils/groupstats';
 import { findIntelligentNextGroup } from '@/utils/recommendation';
 import { getUserJlptLevel, getUserJlptProgress } from '@/utils/jlpt';
+import { getKanjiThisWeek } from '@/utils/weeklystats'; 
 
 export async function getDashboardData(req, res) {
   try {
@@ -16,7 +16,7 @@ export async function getDashboardData(req, res) {
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { track: true, streak: true } // Add streak to selection
+      select: { track: true, streak: true }
     });
 
     const userTrack = user?.track || 'stat';
@@ -27,14 +27,16 @@ export async function getDashboardData(req, res) {
       intelligentNextGroup,
       groupStats,
       jlptLevel,
-      jlptProgress
+      jlptProgress,
+      kanjiThisWeek
     ] = await Promise.all([
       ProgressService.getOverallProgress(userId),
       prisma.onyomiGroup.count(),
       findIntelligentNextGroup(userId, userTrack),
       getGroupStats(userId),
       getUserJlptLevel(userId),
-      userTrack === 'jlpt' ? getUserJlptProgress(userId) : Promise.resolve(null)
+      userTrack === 'jlpt' ? getUserJlptProgress(userId) : Promise.resolve(null),
+      getKanjiThisWeek(userId) // Add the weekly count
     ]);
 
     // Track-specific stats
@@ -56,7 +58,8 @@ export async function getDashboardData(req, res) {
       track: userTrack,
       jlptLevel,
       trackSpecificStats,
-      streak: user?.streak || 0 // Include streak in response
+      streak: user?.streak || 0,
+      kanjiThisWeek 
     };
 
   } catch (error) {

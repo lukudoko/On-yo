@@ -114,7 +114,7 @@ export default function KanjiTest() {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center min-h-[calc(100vh-80px)]">
+      <div className="flex-1 flex items-center justify-center min-h-[calc(100vh-140px)]">
         <Spinner classNames={{ wrapper: "w-30", dots: "bg-black scale-350" }} variant="wave" size='lg' />
       </div>
     );

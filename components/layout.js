@@ -15,7 +15,7 @@ export default function Layout({ children }) {
       <div className="min-h-screen bg-[#f9f4ed]">
         <Header />
         <motion.main 
-          className='font-noto min-h-screen pt-20 px-2 md:px-8'
+          className='font-noto  pt-20 px-2 md:px-8'
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.2 }}
