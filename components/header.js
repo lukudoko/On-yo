@@ -79,67 +79,109 @@ export default function Header() {
                 />
               </div>
             </PopoverTrigger>
+<PopoverContent className="p-4 w-64 rounded-3xl shadow-sm">
+  <div className="flex items-center gap-3">
+    <div className="h-10 relative aspect-square">
+      <Image
+        src={session.user.image}
+        alt="Profile Picture"
+        className="object-cover border rounded-2xl"
+        fill
+        sizes="40px"
+      />
+    </div>
+    <div>
+      <p className="text-lg font-bold">{session?.user?.name?.replace(/\s*\([^)]*\)$/, '').trim() || ''}</p>
+      <p className="text-xs text-gray-500">{session.user.email}</p>
+    </div>
+  </div>
 
-            <PopoverContent className="p-4 w-64 rounded-3xl shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="h-10 relative aspect-square">
-                  <Image
-                    src={session.user.image}
-                    alt="Profile Picture"
-                    className="object-cover border rounded-2xl"
-                    fill
-                    sizes="40px"
-                  />
-                </div>
-                <div>
-                  <p className="text-lg font-bold">{session?.user?.name?.replace(/\s*\([^)]*\)$/, '').trim() || ''}</p>
-                  <p className="text-xs text-gray-500">{session.user.email}</p>
-                </div>
-              </div>
+  {error && <p className="text-red-500 text-sm">{error}</p>}
 
-              {error && <p className="text-red-500 text-sm">{error}</p>}
+  {loadingStats && stats === null ? (
+    <div className="flex justify-center py-4">
+      <Spinner size="sm" />
+    </div>
+  ) : stats ? (
+    <div className="space-y-4 py-4 w-full">
+      
+      <div className="flex justify-center items-baseline mb-2">
+        <span className="text-lg font-extrabold">{Math.round((stats.progress.mastered / stats.progress.total) * 100)}% </span>
+         <span className="text-xs  ml-1"> completed </span>
+      </div>
+      
+      <div className="w-full mb-4 px-2">
+        <div className="flex overflow-hidden rounded-full h-3">
+          <div
+            className="bg-[#26A682] flex items-center justify-center"
+            style={{ width: `${(stats.progress.mastered / stats.progress.total) * 100}%` }}
+          />
+          <div
+            className="bg-[#FE9D0B] flex items-center justify-center"
+            style={{ width: `${(stats.progress.learning / stats.progress.total) * 100}%` }}
+          />
+          <div
+            className="bg-[#EB4752] flex items-center justify-center"
+            style={{ width: `${(stats.progress.unlearned / stats.progress.total) * 100}%` }}
+          />
+        </div>
+      </div>
 
-              {loadingStats && stats === null ? (
-                <div className="flex justify-center py-4">
-                  <Spinner size="sm" />
-                </div>
-              ) : stats ? (
-                <div className="space-y-3 py-4 w-full">
-                  <div className="grid grid-cols-1 gap-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">{headerStats.primaryLabel}</span>
-                      <span className="text-lg font-bold text-[#6A7FDB]">{headerStats.primary}</span>
-                    </div>
+      {/* Track-specific stats */}
+      {stats.track === 'jlpt' ? (
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="text-center p-2 bg-[#6A7FDB15] rounded-lg">
+              <div className="text-lg font-bold">N{stats.jlptLevel}</div>
+              <div className="text-xs text-gray-500">Level</div>
+            </div>
+            <div className="text-center p-2 bg-[#6A7FDB15] rounded-lg">
+              <div className="text-lg font-bold text-[#26A682]">{stats.progress.mastered}</div>
+              <div className="text-xs text-gray-500">Mastered</div>
+            </div>
+          </div>
+          <div className="text-center p-2 bg-[#6A7FDB15] rounded-lg">
+            <div className="text-lg font-bold text-[#FE9D0B]">{stats.progress.learning}</div>
+            <div className="text-xs text-gray-500">Learning</div>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="text-center p-2 bg-gray-50 rounded-lg">
+              <div className="text-lg font-bold text-[#6A7FDB]">{stats.trackSpecificStats.completedGroups}</div>
+              <div className="text-xs text-gray-500">Groups</div>
+            </div>
+            <div className="text-center p-2 bg-gray-50 rounded-lg">
+              <div className="text-lg font-bold text-[#26A682]">{stats.progress.mastered}</div>
+              <div className="text-xs text-gray-500">Mastered</div>
+            </div>
+          </div>
+          <div className="text-center p-2 bg-gray-50 rounded-lg">
+            <div className="text-lg font-bold text-[#FE9D0B]">{stats.progress.learning}</div>
+            <div className="text-xs text-gray-500">Learning</div>
+          </div>
+        </div>
+      )}
 
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">{headerStats.secondaryLabel}</span>
-                      <span className="text-lg font-bold text-[#F56A83]">{headerStats.secondary}</span>
-                    </div>
+      <div className="pt-2 text-xs text-gray-500 text-center border-t border-gray-100">
+        {stats.track === 'jlpt' ? 'JLPT ' : 'Statistically Ordered'} Track
+      </div>
+    </div>
+  ) : (
+    <p className="text-gray-500 text-sm">No stats available</p>
+  )}
 
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">{headerStats.tertiaryLabel}</span>
-                      <span className="text-sm font-medium text-gray-700">{headerStats.tertiary}</span>
-                    </div>
-
-                    <div className="pt-2 text-xs text-gray-500 text-center">
-                      Track: {stats.track === 'jlpt' ? 'JLPT Order' : 'Frequency Order'}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-gray-500 text-sm">No stats available</p>
-              )}
-
-              <Button
-                size="sm"
-                color="danger"
-                variant="flat"
-                onPress={() => signOut()}
-                className="w-full font-medium"
-              >
-                Log out
-              </Button>
-            </PopoverContent>
+  <Button
+    size="sm"
+    color="danger"
+    variant="flat"
+    onPress={() => signOut()}
+    className="w-full font-medium"
+  >
+    Log out
+  </Button>
+</PopoverContent>
           </Popover>
         </motion.div>
       ) : (

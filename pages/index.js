@@ -3,7 +3,7 @@ import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 import {
   Button,
-  Tooltip,
+  Progress,
   Link,
   Modal,
   useDisclosure,
@@ -93,6 +93,7 @@ export default function Home() {
     (progress.mastered / Math.max(progress.total, 1)) * 100
   );
 
+  console.log(dashboardData)
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -223,17 +224,26 @@ export default function Home() {
               <div className="text-xs text-gray-500">day streak</div>
             </div>
             <div className="text-center p-3 bg-[#6A7FDB15] rounded-xl">
-              <div className="text-xs text-gray-500">JLPT level</div>
-              <div className="text-2xl font-bold">
-                N{dashboardData.jlptLevel}
-              </div>
+              {track === 'jlpt' ? (
+                <>
+                  <div className="text-xs text-gray-500">JLPT level</div>
+                  <div className="text-2xl font-bold">N{dashboardData.jlptLevel}</div>
+                </>
+              ) : (
+                <>
+                  <div className="text-xs text-gray-500">Groups completed</div>
+                  <div className="text-2xl font-bold">
+                    {dashboardData.trackSpecificStats.completedGroups}
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
-          {track === "jlpt" && (
+          {track === "jlpt" ? (
             <div className="mt-auto">
               <h4 className="font-semibold mb-2">JLPT Levels</h4>
-              <div className="flex justify-between items-end space-x-2"> {/* Added gap with space-x-2 */}
+              <div className="flex justify-between items-end space-x-2">
                 {[5, 4, 3, 2, 1].map((level) => {
                   const levelData = trackSpecificStats[`n${level}`];
                   if (!levelData) return null;
@@ -243,7 +253,7 @@ export default function Home() {
                   return (
                     <div key={level} className="flex flex-col items-center flex-1">
                       <div className="text-xs mb-1">N{level}</div>
-                      <div className="w-3/4 bg-gray-200 rounded-lg overflow-hidden h-10 flex items-end"> {/* Slimmer width and height */}
+                      <div className="w-3/4 bg-gray-200 rounded-lg overflow-hidden h-10 flex items-end">
                         <div
                           className="bg-[#6A7FDB] w-full transition-all duration-300"
                           style={{ height }}
@@ -255,11 +265,30 @@ export default function Home() {
                 })}
               </div>
             </div>
+          ) : (
+            <div className="mt-auto">
+              <h4 className="font-semibold mb-2">Group Progress</h4>
+              <div className="flex flex-col items-center justify-center space-y-2">
+                <Progress
+                  classNames={{
+                    base: "max-w-xs",
+                    indicator: "bg-[#6A7FDB]",
+                    value: "text-foreground/60",
+                  }}
+                  showValueLabel={true}
+                  size="lg"
+                  value={Math.round((trackSpecificStats.completedGroups / trackSpecificStats.totalGroups) * 100)}
+                />
+                <div className="text-xs text-gray-500 text-center">
+                  {trackSpecificStats.inProgressGroups} groups in progress
+                </div>
+              </div>
+            </div>
           )}
 
           <div className="mt-3 pt-3 border-t border-gray-200 text-center">
             <span className="text-sm text-gray-500">
-              Learning: {track === "jlpt" ? "JLPT Order" : "Frequency Order"}
+              {track === "jlpt" ? "JLPT" : "Statisticalyl Ordered"} Track
             </span>
             <Button
               onPress={onOpen}
