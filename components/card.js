@@ -96,13 +96,22 @@ const KanjiCard = ({
 
   return (
     <>
+
       <motion.div
-        className="flex aspect-square flex-col bg-white p-4 shadow-sm rounded-3xl cursor-pointer h-full relative"
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        onClick={onOpen}
-        transition={{ type: "spring", stiffness: 400, damping: 25 }}
-      >
+      onClick={onOpen}
+        whileHover={{
+          y: -4
+        }}
+        whileTap={{
+          y: 1, // Move down less than before
+          scale: 0.99 // Subtle scale
+        }}
+        transition={{
+          y: { duration: 0.2, ease: "easeOut" },
+          scale: { duration: 0.2, ease: "easeOut" }
+        }}
+        className="flex flex-col aspect-square justify-between p-5 h-full rounded-3xl bg-white cursor-pointer transition-shadow duration-200 ease-out hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.6)] active:shadow-[3px_3px_0px_0px_rgba(0,0,0,0.6)] shadow-sm relative"      >
+
         <div className="absolute top-3 left-3">
           <div
             className={`w-3 h-3 rounded-full ${masteryInfo.color}`}
@@ -110,10 +119,10 @@ const KanjiCard = ({
           />
         </div>
 
-        <div className="flex flex-1 items-center font-bold justify-center text-center text-9xl font-jp-round p-8">
+        <div className="flex flex-1 items-center font-bold justify-center text-center text-6xl md:text-9xl font-jp-round">
           {kanji}
         </div>
-        <div className="flex justify-end items-center">
+          <div className="absolute top-3 right-3">
           <p className="flex items-center justify-center font-bold  bg-gray-800  text-white aspect-square p-2 text-xs rounded-full">
             N{jlpt_new}
           </p>

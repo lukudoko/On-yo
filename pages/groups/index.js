@@ -5,7 +5,7 @@ import { Select, SelectItem, Chip } from "@heroui/react";
 import { HiBookOpen, HiMiniCheckCircle  } from "react-icons/hi2";
 
 const LoadingSkeleton = () => (
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
     {[...Array(8)].map((_, index) => (
       <div key={index} className="w-full bg-gray-100 aspect-square rounded-3xl animate-pulse" />
     ))}
@@ -110,7 +110,7 @@ const LevelSelector = ({ selectedLevel, onLevelChange }) => {
 };
 
 const GroupsGrid = ({ groups, mode, selectedLevel }) => (
-  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
     {groups.map((group) => (
       <OnyomiGroupCard
         key={group.reading}

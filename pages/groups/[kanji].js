@@ -94,7 +94,7 @@ export default function KanjiGroupPage({ onyomi, initialJlptFilter }) {
           <div className="h-12 bg-gray-200 rounded w-32 animate-pulse mb-2"></div>
           <div className="h-7 bg-gray-200 rounded w-60 animate-pulse"></div>
         </div>
-        <div className="grid mx-auto max-w-md md:max-w-4xl grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
           {[...Array(6)].map((_, index) => (
             <div key={index} className="flex flex-col aspect-square justify-between p-5 h-full rounded-3xl bg-gray-200 animate-pulse">
             </div>
@@ -163,7 +163,7 @@ export default function KanjiGroupPage({ onyomi, initialJlptFilter }) {
         </div>
       </div>
 
-      <div className="grid mx-auto max-w-md md:max-w-4xl grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid w-full grid-cols-2 md:grid-cols-3 gap-6">
         {groupKanji.map((kanji) => (
           <KanjiCard
             key={kanji.kanji}
