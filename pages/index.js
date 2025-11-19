@@ -75,7 +75,7 @@ export default function Home() {
 
   if (error || !dashboardData) {
     return (
-      <div className="p-6 max-w-5xl mx-auto">
+      <div className="pt-8 max-w-5xl mx-auto">
         <div className="text-center py-10">
           <p className="text-red-600 mb-4">
             {error || "Unable to load dashboard data."}
@@ -117,7 +117,7 @@ export default function Home() {
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="py-6 max-w-5xl mx-auto">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}

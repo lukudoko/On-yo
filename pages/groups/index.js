@@ -6,18 +6,21 @@ import { HiBookOpen, HiMiniCheckCircle } from "react-icons/hi2";
 import { motion } from 'framer-motion';
 
 const cardVariants = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0 },
   visible: (i) => ({
     opacity: 1,
-    y: 0,
-    transition: { delay: i * 0.02, duration: 0.3, ease: "easeOut" }
+    transition: { duration: 0.3, ease: "easeOut" }
   })
 };
 
 const LoadingSkeleton = () => (
   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
     {Array.from({ length: 8 }).map((_, i) => (
-      <div key={i} className="w-full bg-gray-100 aspect-square rounded-3xl animate-pulse" />
+      <div 
+        key={i} 
+        className="w-full aspect-square rounded-3xl bg-gray-200 animate-pulse p-6" // Match your card's padding
+      >
+      </div>
     ))}
   </div>
 );
@@ -94,12 +97,6 @@ export default function LearnPage() {
   });
 
   useEffect(() => {
-    if ("scrollRestoration" in window.history) {
-      window.history.scrollRestoration = "auto";
-    }
-  }, []);
-
-  useEffect(() => {
     localStorage.setItem('jlptLevel', selectedLevel);
   }, [selectedLevel]);
 
@@ -140,61 +137,6 @@ export default function LearnPage() {
     fetchData();
   }, [fetchData]);
 
-useEffect(() => {
-  if (typeof window === "undefined") return;
-
-  if ("scrollRestoration" in window.history) {
-    try {
-      window.history.scrollRestoration = "auto";
-    } catch (_) {}
-  }
-
-  const scrollPositions = new Map();
-  let isPopNavigation = false;
-
-  const saveScroll = (path = window.location.pathname) => {
-    scrollPositions.set(path, window.scrollY || 0);
-  };
-
-  const onPopState = () => {
-    isPopNavigation = true; 
-  };
-
-  const onRouteChangeStart = () => {
-    saveScroll();
-  };
-
-  const onRouteChangeComplete = (url) => {
-
-    if (!isPopNavigation) return;
-    isPopNavigation = false;
-
-    const saved = scrollPositions.get(url) ?? 0;
-
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        const current = window.scrollY || 0;
-
-        if (Math.abs(current - saved) > 3) {
-          window.scrollTo(0, saved);
-        }
-      });
-    });
-  };
-
-  saveScroll(window.location.pathname);
-
-  window.addEventListener("popstate", onPopState);
-  router.events.on("routeChangeStart", onRouteChangeStart);
-  router.events.on("routeChangeComplete", onRouteChangeComplete);
-
-  return () => {
-    window.removeEventListener("popstate", onPopState);
-    router.events.off("routeChangeStart", onRouteChangeStart);
-    router.events.off("routeChangeComplete", onRouteChangeComplete);
-  };
-}, [router.events]);
-
   const stats = groups.reduce(
     (acc, g) => {
       const total = g.total ?? g.kanjiCount ?? 0;
@@ -211,23 +153,21 @@ useEffect(() => {
     : 0;
 
   return (
-    <div className="px-8 md:px-4 pb-24 max-w-5xl mx-auto">
-
-      {}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-6 mb-8 items-center">
+    <div className="pb-24 max-w-5xl mx-auto">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 py-6 items-center">
 
         <div>
           {loading
-            ? <div className="h-7 bg-gray-200 rounded w-32 animate-pulse" />
+            ? <div className="h-6 bg-gray-200 rounded w-32 animate-pulse" />
             : <span className="text-xl font-black">{groups.length} groups</span>}
         </div>
 
-        <div className="justify-self-center col-span-2 sm:col-span-1">
+        <div className="order-3 justify-self-center col-span-2 sm:order-none sm:col-span-1">
           {loading ? (
-            <div className="h-7 bg-gray-200 rounded w-52 animate-pulse" />
+            <div className="h-6 bg-gray-200 rounded w-52 animate-pulse" />
           ) : (
             <div className="flex items-center gap-4 text-sm text-gray-600">
-  <Chip
+              <Chip
                 classNames={{
                   content: "text-white font-semibold",
                 }}
@@ -268,20 +208,19 @@ useEffect(() => {
         {mode === "jlpt" && (
           <div className="flex justify-end">
             {loading
-              ? <div className="w-24 h-10 bg-gray-200 rounded animate-pulse" />
+              ? <div className="order-2 sm:order-none sm:col-span-1 w-24 h-8 bg-gray-200 rounded animate-pulse" />
               : <LevelSelector selectedLevel={selectedLevel} onChange={setSelectedLevel} />}
           </div>
         )}
       </div>
 
-      {}
       {loading
         ? <LoadingSkeleton />
         : error
-        ? <ErrorDisplay error={error} />
-        : groups.length === 0
-        ? <EmptyState mode={mode} selectedLevel={selectedLevel} />
-        : <GroupsGrid groups={groups} mode={mode} selectedLevel={selectedLevel} />}
+          ? <ErrorDisplay error={error} />
+          : groups.length === 0
+            ? <EmptyState mode={mode} selectedLevel={selectedLevel} />
+            : <GroupsGrid groups={groups} mode={mode} selectedLevel={selectedLevel} />}
     </div>
   );
 }
