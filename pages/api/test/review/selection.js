@@ -38,6 +38,8 @@ export default async function handler(req, res) {
       });
     }
 
+    const selectedKanji = allTestable;
+
     const allGroups = await prisma.onyomiGroup.findMany({
       select: {
         reading: true
@@ -45,34 +47,7 @@ export default async function handler(req, res) {
     });
     const allReadings = allGroups.map(g => g.reading);
 
-    const learningKanji = allTestable.filter(k => k.masteryLevel === 1);
-    const knownKanji = allTestable.filter(k => k.masteryLevel === 2);
-
-    let selectedKanji = [];
-
-    if (learningKanji.length > 0) {
-
-      const minLearning = 3;
-      const maxLearningFromPercentage = Math.floor(15 * 0.7);
-      const maxLearning = Math.min(learningKanji.length, maxLearningFromPercentage);
-
-      const targetLearning = Math.max(minLearning, Math.min(maxLearning, Math.floor(Math.random() * (maxLearning - minLearning + 1)) + minLearning));
-
-      const shuffledLearning = [...learningKanji].sort(() => 0.5 - Math.random());
-      selectedKanji.push(...shuffledLearning.slice(0, targetLearning));
-    }
-
-    const remainingSlots = 15 - selectedKanji.length;
-    if (remainingSlots > 0 && knownKanji.length > 0) {
-      const shuffledKnown = [...knownKanji].sort(() => 0.5 - Math.random());
-      const additionalKnown = shuffledKnown.slice(0, remainingSlots);
-      selectedKanji.push(...additionalKnown);
-    }
-
-    selectedKanji = [...selectedKanji].sort(() => 0.5 - Math.random());
-    selectedKanji = selectedKanji.slice(0, 15);
     const kanjiWithOptions = await Promise.all(selectedKanji.map(async (progress) => {
-
       const isWriteIn = Math.random() < 0.5;
 
       let multipleChoiceOptions = [];
@@ -90,7 +65,6 @@ export default async function handler(req, res) {
 
       let hints = [];
       if (progress.masteryLevel === 1) {
-
         const sameGroupKanji = await prisma.kanji.findMany({
           where: {
             primary_onyomi: progress.kanji.primary_onyomi

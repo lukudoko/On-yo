@@ -1,10 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { Progress, Accordion, AccordionItem, Spinner, Input, Button, Popover, PopoverTrigger, PopoverContent, Form } from "@heroui/react";
 import { motion } from "framer-motion";
-import Confetti from 'react-confetti-boom'
+import Confetti from 'react-confetti-boom';
 
 export default function KanjiTest() {
+  const router = useRouter();
+  const containerRef = useRef(null);
+
   const [testData, setTestData] = useState(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState('');
@@ -12,23 +15,7 @@ export default function KanjiTest() {
   const [isCorrect, setIsCorrect] = useState(false);
   const [sessionResults, setSessionResults] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [formattedMeanings, setFormattedMeanings] = useState(null);
   const [showSummary, setShowSummary] = useState(false);
-  const router = useRouter();
-
-  const formatReadings = (readings) => {
-    if (!readings || readings.length === 0) return "None";
-
-    const shuffled = [...readings].sort(() => 0.5 - Math.random());
-    const selected = shuffled.slice(0, 3);
-
-    return selected.map((reading, index) => (
-      <span key={index} className="inline-block mr-2 mb-1 last:mr-0">
-        {reading}
-        {index < selected.length - 1 && ', '}
-      </span>
-    ));
-  };
 
   useEffect(() => {
     const loadTestData = async () => {
@@ -52,18 +39,35 @@ export default function KanjiTest() {
   }, []);
 
   useEffect(() => {
-    if (testData && testData[currentQuestion]) {
-      setFormattedMeanings(formatReadings(testData[currentQuestion].kanji.meanings));
+    if (containerRef.current) {
+      containerRef.current.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'start' 
+      });
     }
-  }, [currentQuestion, testData]);
+  }, [currentQuestion, showResult]);
+
+  const formatReadings = (readings) => {
+    if (!readings || readings.length === 0) return "None";
+
+    const shuffled = [...readings].sort(() => 0.5 - Math.random());
+    const selected = shuffled.slice(0, 3);
+
+    return selected.map((reading, index) => (
+      <span key={index} className="inline-block mr-2 mb-1 last:mr-0">
+        {reading}
+        {index < selected.length - 1 && ', '}
+      </span>
+    ));
+  };
 
   const handleSubmit = async () => {
     if (!testData || currentQuestion >= testData.length) return;
 
     const currentKanji = testData[currentQuestion];
-    const userAnswer = currentKanji.testType === 'write-in' ? selectedAnswer : selectedAnswer;
+    const userAnswer = selectedAnswer.trim();
     const correct = currentKanji.testType === 'write-in'
-      ? userAnswer.trim().toLowerCase() === currentKanji.correctAnswer.toLowerCase()
+      ? userAnswer.toLowerCase() === currentKanji.correctAnswer.toLowerCase()
       : userAnswer === currentKanji.correctAnswer;
 
     setIsCorrect(correct);
@@ -78,7 +82,7 @@ export default function KanjiTest() {
     setSessionResults(prev => [...prev, result]);
 
     try {
-      const response = await fetch('/api/test/review/updateStreak', {
+      await fetch('/api/test/review/updateStreak', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -89,10 +93,6 @@ export default function KanjiTest() {
           isCorrect: correct
         })
       });
-
-      if (!response.ok) {
-        console.error('Error updating streak');
-      }
     } catch (error) {
       console.error('Error updating streak:', error);
     }
@@ -110,6 +110,15 @@ export default function KanjiTest() {
 
   const finishTest = () => {
     router.push('/');
+  };
+
+  const getSummaryMessage = (accuracy) => {
+    if (accuracy >= 90) return "Amazing Work!";
+    if (accuracy >= 80) return "Excellent!";
+    if (accuracy >= 70) return "Great stuff! 😎";
+    if (accuracy >= 60) return "Good shot!";
+    if (accuracy >= 50) return "Not bad! 🤔";
+    return "Keep practicing! 🔥";
   };
 
   if (loading) {
@@ -131,24 +140,10 @@ export default function KanjiTest() {
   if (showSummary) {
     const correctCount = sessionResults.filter(r => r.isCorrect).length;
     const accuracy = Math.round((correctCount / sessionResults.length) * 100);
-
-    let message;
-    if (accuracy >= 90) {
-      message = "Amazing Work!";
-    } else if (accuracy >= 80) {
-      message = "Excellent!";
-    } else if (accuracy >= 70) {
-      message = "Great stuff! 😎";
-    } else if (accuracy >= 60) {
-      message = "Good shot!";
-    } else if (accuracy >= 50) {
-      message = "Not bad! 🤔";
-    } else {
-      message = "Keep practicing! 🔥";
-    }
+    const message = getSummaryMessage(accuracy);
 
     return (
-      <div className="p-6 max-w-2xl mx-auto">
+      <div className="py-6 max-w-2xl mx-auto">
         <Confetti particleCount={80} />
         <motion.div
           className="bg-white flex flex-col w-full max-w-md shadow-sm rounded-3xl mx-auto p-6 gap-6"
@@ -161,7 +156,7 @@ export default function KanjiTest() {
             </div>
           </div>
 
-          <Button className='bg-[#6A7FDB20] font-semibold' onPress={finishTest} >
+          <Button className='bg-[#6A7FDB20] font-semibold' onPress={finishTest}>
             Back to Dash
           </Button>
 
@@ -174,9 +169,13 @@ export default function KanjiTest() {
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.3, delay: index * 0.02 }}
-                    className={`p-4 flex flex-col justify-center items-center rounded-2xl ${result.isCorrect ? 'bg-[#26A68220]' : 'bg-[#EB475220]'}`}
+                    className={`p-4 flex flex-col justify-center items-center rounded-2xl ${
+                      result.isCorrect ? 'bg-[#26A68220]' : 'bg-[#EB475220]'
+                    }`}
                   >
-                    <span className="text-2xl font-jp-round font-bold">{testData.find(k => k.kanjiId === result.kanjiId)?.kanji.character}</span>
+                    <span className="text-2xl font-jp-round font-bold">
+                      {testData.find(k => k.kanjiId === result.kanjiId)?.kanji.character}
+                    </span>
                     {!result.isCorrect && (
                       <div className="text-xs">
                         Answer: {result.correctAnswer}
@@ -194,35 +193,41 @@ export default function KanjiTest() {
 
   const currentKanji = testData[currentQuestion];
   const progress = Math.round(((currentQuestion + 1) / testData.length) * 100);
+  const formattedMeanings = formatReadings(currentKanji.kanji.meanings);
+  const isWriteIn = currentKanji.testType === 'write-in';
+  const showHint = currentKanji.masteryLevel === 1 && currentKanji.hints?.length > 0;
 
   return (
-    <div className="p-6 max-w-2xl mx-auto">
+    <div ref={containerRef} className="py-6 max-w-2xl mx-auto">
       <div className="mb-6">
-        <Progress aria-label="Progress" size="lg"
+        <Progress 
+          aria-label="Progress" 
+          size="lg"
           label={`Question ${currentQuestion + 1} of ${testData.length}`}
           classNames={{
-            base: "max-w-xs mx-auto md:max-w-sm ",
+            base: "max-w-xs mx-auto md:max-w-sm",
             indicator: "bg-[#F56A83]",
             label: "font-bold",
           }}
-          value={progress} />
+          value={progress} 
+        />
       </div>
 
-      <div className="bg-white flex flex-col w-full max-w-md  shadow-sm rounded-3xl mx-auto p-6 gap-6">
-
-
+      <div className="bg-white flex flex-col w-full max-w-md shadow-sm rounded-3xl mx-auto p-6 gap-6">
         <div className="text-center">
           <motion.div
             key={currentQuestion}
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ type: 'spring', mass: 0.7, damping: 20 }} className="text-9xl font-bold font-jp-round mb-4">{currentKanji.kanji.character}
-
+            transition={{ type: 'spring', mass: 0.7, damping: 20 }} 
+            className="text-9xl font-bold font-jp-round mb-4"
+          >
+            {currentKanji.kanji.character}
           </motion.div>
 
-
           <div className="text-gray-600 text-sm">
-            {formattedMeanings}</div>
+            {formattedMeanings}
+          </div>
         </div>
 
         {!showResult ? (
@@ -231,29 +236,9 @@ export default function KanjiTest() {
               e.preventDefault();
               handleSubmit();
             }}
-            className="flex flex-col  gap-6 items-center justify-center"
+            className="flex flex-col gap-6 items-center justify-center"
           >
-            {currentKanji.testType === 'multiple-choice' ? (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="grid grid-cols-3 justify-items-center gap-3"
-              >
-                {currentKanji.multipleChoiceOptions.map((option, index) => (
-                  <Button
-                    key={index}
-                    onPress={() => setSelectedAnswer(option)}
-                    size="lg"
-                    className={`w-full font-bold text-lg ${selectedAnswer === option
-                      ? 'bg-[#6A7FDB] text-white '
-                      : 'bg-[#6A7FDB20] text-black'
-                      }`}
-                  >
-                    {option}
-                  </Button>
-                ))}
-              </motion.div>
-            ) : (
+            {isWriteIn ? (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -267,42 +252,58 @@ export default function KanjiTest() {
                   size="lg"
                 />
               </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="grid grid-cols-3 justify-items-center gap-3"
+              >
+                {currentKanji.multipleChoiceOptions.map((option, index) => (
+                  <Button
+                    key={index}
+                    onPress={() => setSelectedAnswer(option)}
+                    size="lg"
+                    className={`w-full font-bold text-lg ${
+                      selectedAnswer === option
+                        ? 'bg-[#6A7FDB] text-white'
+                        : 'bg-[#6A7FDB20] text-black'
+                    }`}
+                  >
+                    {option}
+                  </Button>
+                ))}
+              </motion.div>
             )}
+
             <div className="flex justify-center gap-4">
               <Button
                 type="submit"
                 className='bg-[#6A7FDB20] font-semibold w-32'
-                isDisabled={
-                  currentKanji.testType === 'write-in'
-                    ? !selectedAnswer.trim()
-                    : !selectedAnswer
-                }
+                isDisabled={!selectedAnswer.trim()}
               >
                 Check
               </Button>
 
-              {currentKanji.masteryLevel === 1 &&
-                currentKanji.hints &&
-                currentKanji.hints.length > 0 && (
-                  <Popover size="lg" placement="top">
-                    <PopoverTrigger>
-                      <Button className='bg-[#6A7FDB20] font-semibold'>Hint</Button>
-                    </PopoverTrigger>
-                    <PopoverContent className=" flex flex-col mt-2 p-6">
-                      <div className="text-sm font-bold mb-3">Same reading as:</div>
-                      <div className="flex justify-center space-x-4">
-                        {currentKanji.hints.map((hint, index) => (
-                          <span
-                            key={index}
-                            className="font-jp-round bg-[#6A7FDB10] rounded-lg p-2 text-2xl"
-                          >
-                            {hint}
-                          </span>
-                        ))}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                )}
+              {showHint && (
+                <Popover size="lg" placement="top">
+                  <PopoverTrigger>
+                    <Button className='bg-[#6A7FDB20] font-semibold'>Hint</Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="flex flex-col mt-2 p-6">
+                    <div className="text-sm font-bold mb-3">Same reading as:</div>
+                    <div className="flex justify-center space-x-4">
+                      {currentKanji.hints.map((hint, index) => (
+                        <span
+                          key={index}
+                          className="font-jp-round bg-[#6A7FDB10] rounded-lg p-2 text-2xl"
+                        >
+                          {hint}
+                        </span>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              )}
             </div>
           </Form>
         ) : (
@@ -310,10 +311,14 @@ export default function KanjiTest() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ type: "spring", bounce: 0.25 }}
-            className={`rounded-3xl flex flex-col gap-4 items-center p-6 ${isCorrect ? 'bg-[#26A68220]' : 'bg-[#EB475220]'}`}
+            className={`rounded-3xl flex flex-col gap-4 items-center p-6 ${
+              isCorrect ? 'bg-[#26A68220]' : 'bg-[#EB475220]'
+            }`}
           >
             <div className="text-center">
-              <div className={`text-2xl font-bold ${isCorrect ? 'text-green-600' : 'text-red-600'}`}>
+              <div className={`text-2xl font-bold ${
+                isCorrect ? 'text-green-600' : 'text-red-600'
+              }`}>
                 {isCorrect ? 'Correct!' : 'Incorrect'}
               </div>
               <div className="text-lg mt-2">
