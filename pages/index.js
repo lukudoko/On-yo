@@ -288,7 +288,7 @@ export default function Home() {
 
           <div className="mt-3 pt-3 border-t border-gray-200 text-center">
             <span className="text-sm text-gray-500">
-              {track === "jlpt" ? "JLPT" : "Statisticalyl Ordered"} Track
+              {track === "jlpt" ? "JLPT" : "Statistically Ordered"} Track
             </span>
             <Button
               onPress={onOpen}
@@ -315,7 +315,7 @@ export default function Home() {
               Review Kanji
             </Button>
             <Button size="sm" className="font-medium text-white bg-[#6A7FDB]">
-              Learn (Coming soon)
+              Discovery (Coming soon)
             </Button>
           </div>
         </motion.div>
