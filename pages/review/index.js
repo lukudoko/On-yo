@@ -48,7 +48,6 @@ export default function KanjiTest() {
         setLoading(false);
       }
     };
-
     loadTestData();
   }, []);
 
@@ -71,7 +70,6 @@ export default function KanjiTest() {
 
   const formatReadings = (readings) => {
     if (!readings?.length) return "None";
-
     return readings.map((reading, index) => (
       <span key={index} className="inline-block mr-2 mb-1 last:mr-0">
         {reading}
@@ -87,7 +85,6 @@ export default function KanjiTest() {
         headers: API_HEADERS,
         body: JSON.stringify({ kanjiId, isCorrect })
       });
-
       if (!response.ok) {
         console.error('Error updating streak');
       }
@@ -156,17 +153,24 @@ export default function KanjiTest() {
     return (
       <div className="py-6 max-w-2xl mx-auto">
         <Confetti particleCount={80} />
-        <motion.div className="bg-white flex flex-col w-full max-w-md shadow-sm rounded-3xl mx-auto p-6 gap-6">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold mb-4">{getAccuracyMessage(accuracy)}</h2>
-            <div className="text-6xl font-black mb-4">{accuracy}%</div>
+        <motion.div 
+          className="bg-white flex flex-col w-full max-w-md shadow-sm rounded-3xl mx-auto p-6 gap-6 text-center"
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+        >
+          <div>
+            <h2 className="text-2xl font-bold mb-2">{getAccuracyMessage(accuracy)}</h2>
+            <div className="text-6xl font-black mb-2">{accuracy}%</div>
             <div className="text-gray-600">
               {correctCount}/{sessionResults.length} correct
             </div>
           </div>
 
-          <Button className='bg-[#6A7FDB20] font-semibold' onPress={() => router.push('/')}>
-            Back to Dash
+          <Button 
+            className='bg-[#6A7FDB20] font-semibold' 
+            onPress={() => router.push('/')}
+          >
+            Back to Dashboard
           </Button>
 
           <Accordion className="shadow-sm rounded-2xl" variant="shadow">
@@ -178,8 +182,7 @@ export default function KanjiTest() {
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.3, delay: index * 0.02 }}
-                    className={`p-4 flex flex-col justify-center items-center rounded-2xl ${result.isCorrect ? 'bg-[#26A68220]' : 'bg-[#EB475220]'
-                      }`}
+                    className={`p-4 flex flex-col justify-center items-center rounded-2xl ${result.isCorrect ? 'bg-[#26A68220]' : 'bg-[#EB475220]'}`}
                   >
                     <span className="text-2xl font-jp-round font-bold">
                       {testData.find(k => k.kanjiId === result.kanjiId)?.kanji.character}
@@ -204,8 +207,8 @@ export default function KanjiTest() {
   return (
     <div className="py-6 max-w-2xl mx-auto">
       <div className="mb-6">
-        <Progress
-          aria-label="Progress"
+        <Progress 
+          aria-label="Progress" 
           size="lg"
           label={`Question ${currentQuestion + 1} of ${testData.length}`}
           classNames={{
@@ -213,7 +216,7 @@ export default function KanjiTest() {
             indicator: "bg-[#F56A83]",
             label: "font-bold",
           }}
-          value={progress}
+          value={progress} 
         />
       </div>
 
@@ -223,7 +226,7 @@ export default function KanjiTest() {
             key={currentQuestion}
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ type: 'spring', mass: 0.7, damping: 20 }}
+            transition={{ type: 'spring', mass: 0.7, damping: 20 }} 
             className="text-9xl font-bold font-jp-round mb-4"
           >
             {currentKanji.kanji.character}
@@ -253,10 +256,11 @@ export default function KanjiTest() {
                     key={index}
                     onPress={() => setSelectedAnswer(option)}
                     size="lg"
-                    className={`w-full font-bold text-lg ${selectedAnswer === option
-                      ? 'bg-[#6A7FDB] text-white'
-                      : 'bg-[#6A7FDB20] text-black'
-                      }`}
+                    className={`w-full font-bold text-lg ${
+                      selectedAnswer === option
+                        ? 'bg-[#6A7FDB] text-white'
+                        : 'bg-[#6A7FDB20] text-black'
+                    }`}
                   >
                     {option}
                   </Button>
@@ -308,22 +312,20 @@ export default function KanjiTest() {
           </Form>
         ) : (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ type: "spring", bounce: 0.25 }}
-            className={`rounded-3xl flex flex-col gap-4 items-center p-6 ${isCorrect ? 'bg-[#26A68220]' : 'bg-[#EB475220]'
-              }`}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center"
           >
-            <div className="text-center">
-              <div className={`text-2xl font-bold ${isCorrect ? 'text-green-600' : 'text-red-600'}`}>
-                {isCorrect ? 'Correct!' : 'Incorrect'}
-              </div>
-              <div className="text-lg mt-2">
-                Answer: <span className="font-jp-round">{currentKanji.correctAnswer}</span>
-              </div>
+            <div className={`text-2xl font-bold ${isCorrect ? 'text-green-600' : 'text-red-600'}`}>
+              {isCorrect ? 'Correct!' : 'Incorrect'}
             </div>
-
-            <Button onPress={handleNext} className='bg-[#6A7FDB20] font-semibold w-32'>
+            <div className="text-lg mt-2">
+              Answer: <span className="font-jp-round">{currentKanji.correctAnswer}</span>
+            </div>
+            <Button 
+              onPress={handleNext} 
+              className='bg-[#6A7FDB20] font-semibold mt-4'
+            >
               {currentQuestion < testData.length - 1 ? 'Next Question' : 'See Results'}
             </Button>
           </motion.div>

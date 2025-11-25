@@ -1,8 +1,7 @@
-// utils/discoverytest.js
 import { prisma } from '@/lib/prisma';
 
-export async function getDiscoveryKanji(userId, track, jlptLevel, limit = 20) {
-  // Build kanji filter
+export async function getDiscoveryKanji(userId, track, jlptLevel, limit) {
+
   let kanjiWhere = {
     progress: {
       every: {
@@ -28,7 +27,15 @@ export async function getDiscoveryKanji(userId, track, jlptLevel, limit = 20) {
 
   if (unlearnedKanji.length === 0) return [];
 
-  // Group by onyomi
+
+  for (const kanji of unlearnedKanji) {
+    await prisma.userProgress.upsert({
+      where: { userId_kanjiId: { userId, kanjiId: kanji.id } },
+      update: {}, // do nothing if exists
+      create: { userId, kanjiId: kanji.id, masteryLevel: 0, testStreak: 0 }
+    });
+  }
+
   const onyomiGroups = {};
   unlearnedKanji.forEach(k => {
     if (!onyomiGroups[k.primary_onyomi]) {
@@ -37,7 +44,6 @@ export async function getDiscoveryKanji(userId, track, jlptLevel, limit = 20) {
     onyomiGroups[k.primary_onyomi].push(k);
   });
 
-  // Get usefulness scores
   const allGroups = await prisma.onyomiGroup.findMany({
     select: { reading: true, usefulness_score: true }
   });
@@ -52,7 +58,7 @@ export async function getDiscoveryKanji(userId, track, jlptLevel, limit = 20) {
     const knownInGroup = await prisma.userProgress.findMany({
       where: {
         userId: userId,
-        masteryLevel: { gte: 1 },
+        masteryLevel: 2,
         kanji: { primary_onyomi: onyomi }
       },
       include: {
@@ -77,14 +83,8 @@ export async function getDiscoveryKanji(userId, track, jlptLevel, limit = 20) {
     });
   }
 
-  // ✅ NO SHUFFLE — just sort
-  if (track === 'jlpt') {
-    // Keep order as returned by DB (you can later sort by group usefulness if desired)
-    // For now: stable order
-  } else {
-    // Stats track: sort by usefulness (descending)
-    testableKanji.sort((a, b) => b.usefulnessScore - a.usefulnessScore);
-  }
+  testableKanji.sort((a, b) => b.usefulnessScore - a.usefulnessScore);
 
   return testableKanji.slice(0, limit);
 }
+

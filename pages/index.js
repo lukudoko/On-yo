@@ -314,8 +314,13 @@ export default function Home() {
             >
               Review Kanji
             </Button>
-            <Button size="sm" className="font-medium text-white bg-[#6A7FDB]">
-              Discovery (Coming soon)
+            <Button
+              as={Link}
+              href="/discovery"
+              size="sm"
+              className="font-medium text-white bg-[#6A7FDB]"
+            >
+              Discovery
             </Button>
           </div>
         </motion.div>

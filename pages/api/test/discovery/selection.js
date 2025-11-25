@@ -1,4 +1,3 @@
-// pages/api/test/discovery/selection.js
 import { getUserId } from '@/utils/progress';
 import { getDiscoveryKanji } from '@/utils/discoverytest';
 import { getUserJlptLevel } from '@/utils/jlpt';
@@ -39,12 +38,18 @@ export default async function handler(req, res) {
       computedJlptLevel = await getUserJlptLevel(userId);
     }
 
-    const discoveryKanji = await getDiscoveryKanji(userId, track, computedJlptLevel, 20);
+    const discoveryKanji = await getDiscoveryKanji(userId, track, computedJlptLevel, 7);
 
     if (discoveryKanji.length === 0) {
+      let message;
+      if (track === 'jlpt') {
+        message = `You've discovered all kanji in JLPT N${computedJlptLevel}! Keep reviewing to unlock the next level.`;
+      } else {
+        message = "You've discovered all available kanji! Master more kanji in your review tests to unlock new groups.";
+      }
       return res.status(200).json({
         success: false,
-        error: 'No discovery kanji available. Try learning more first!',
+        error: message,
         kanji: []
       });
     }
