@@ -206,20 +206,6 @@ export default function KanjiTest() {
 
   return (
     <div className="py-6 max-w-2xl mx-auto">
-      <div className="mb-6">
-        <Progress
-          aria-label="Progress"
-          size="lg"
-          label={`Question ${currentQuestion + 1} of ${testData.length}`}
-          classNames={{
-            base: "max-w-xs mx-auto md:max-w-sm",
-            indicator: "bg-[#F56A83]",
-            label: "font-bold",
-          }}
-          value={progress}
-        />
-      </div>
-
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -333,6 +319,20 @@ export default function KanjiTest() {
           </motion.div>
         )}
       </motion.div>
+            <div className="mt-6">
+        <Progress
+          aria-label="Progress"
+          size="lg"
+          label={`Question ${currentQuestion + 1} of ${testData.length}`}
+          classNames={{
+            base: "max-w-xs mx-auto md:max-w-sm",
+            indicator: "bg-[#F56A83]",
+            label: "font-bold",
+          }}
+          value={progress}
+        />
+      </div>
+
     </div>
   );
 }
