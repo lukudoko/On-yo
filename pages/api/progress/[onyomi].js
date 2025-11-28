@@ -6,10 +6,10 @@ export default async function handler(req, res) {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
 
-  const referer = req.headers.referer || req.headers.origin;
-  if (!referer || !referer.includes(req.headers.host)) {
-    return res.redirect(307, '/404');
-  }
+ // const referer = req.headers.referer || req.headers.origin;
+ // if (!referer || !referer.includes(req.headers.host)) {
+  //  return res.redirect(307, '/404');
+ // }
 
   try {
     const { onyomi, jlpt } = req.query;
