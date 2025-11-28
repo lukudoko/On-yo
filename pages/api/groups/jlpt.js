@@ -6,9 +6,14 @@ export default async function handler(req, res) {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
 
+  const referer = req.headers.referer || req.headers.origin;
+  if (!referer || !referer.includes(req.headers.host)) {
+    return res.redirect(307, '/404');
+  }
+
   try {
     const { jlptLevel } = req.query;
-    const jlptNum = jlptLevel ? parseInt(jlptLevel) : 5; 
+    const jlptNum = jlptLevel ? parseInt(jlptLevel) : 5;
 
     const userId = await getUserId(req, res);
 
@@ -38,17 +43,17 @@ export default async function handler(req, res) {
         }
       },
       orderBy: {
-        usefulness_score: 'desc'  
+        usefulness_score: 'desc'
       }
     });
 
     const userProgress = await prisma.UserProgress.findMany({
       where: {
-        userId: userId  
+        userId: userId
       },
       select: {
-        kanjiId: true,     
-        masteryLevel: true 
+        kanjiId: true,
+        masteryLevel: true
       }
     });
 
@@ -62,11 +67,11 @@ export default async function handler(req, res) {
       } else if (progress.masteryLevel === 1) {
         status = 'learning';
       }
-      progressMap.set(progress.kanjiId, status); 
+      progressMap.set(progress.kanjiId, status);
     });
 
     const formattedGroups = onyomiGroups.map(group => {
-      const jlptKanji = group.kanji; 
+      const jlptKanji = group.kanji;
       const totalKanji = jlptKanji.length;
 
       let mastered = 0;

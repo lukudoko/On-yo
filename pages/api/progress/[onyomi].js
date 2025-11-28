@@ -6,24 +6,27 @@ export default async function handler(req, res) {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
 
+  const referer = req.headers.referer || req.headers.origin;
+  if (!referer || !referer.includes(req.headers.host)) {
+    return res.redirect(307, '/404');
+  }
+
   try {
     const { onyomi, jlpt } = req.query;
-    
+
     if (!onyomi) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Onyomi parameter required' 
+      return res.status(400).json({
+        success: false,
+        error: 'Onyomi parameter required'
       });
     }
 
     const userId = await getUserId(req, res);
 
-    // Build where clause
     const whereClause = {
       primary_onyomi: onyomi
     };
 
-    // Add JLPT filter if specified
     if (jlpt) {
       const jlptNum = parseInt(jlpt.replace('N', ''));
       if (!isNaN(jlptNum) && [1, 2, 3, 4, 5].includes(jlptNum)) {
@@ -31,12 +34,11 @@ export default async function handler(req, res) {
       }
     }
 
-    // Get group kanji data
     const groupKanji = await prisma.kanji.findMany({
       where: whereClause,
       orderBy: [
-        { jlpt_new: 'desc' }, // N5 first
-        { freq: 'asc' }       // Then by frequency
+        { jlpt_new: 'desc' },
+        { freq: 'asc' }
       ],
       select: {
         character: true,
@@ -57,13 +59,12 @@ export default async function handler(req, res) {
     });
 
     if (groupKanji.length === 0) {
-      return res.status(404).json({ 
-        success: false, 
-        error: 'Onyomi group not found' 
+      return res.status(404).json({
+        success: false,
+        error: 'Onyomi group not found'
       });
     }
 
-    // Get mastery levels if user is authenticated
     let masteryLevels = {};
     if (userId) {
       const kanjiCharacters = groupKanji.map(k => k.character);
@@ -82,7 +83,7 @@ export default async function handler(req, res) {
 
     res.status(200).json({
       success: true,
-       data: {
+      data: {
         groupKanji: transformedKanji,
         onyomi: onyomi,
         masteryLevels: masteryLevels,

@@ -153,7 +153,7 @@ export default function KanjiTest() {
     return (
       <div className="py-6 max-w-2xl mx-auto">
         <Confetti particleCount={80} />
-        <motion.div 
+        <motion.div
           className="bg-white flex flex-col w-full max-w-md shadow-sm rounded-3xl mx-auto p-6 gap-6 text-center"
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -166,8 +166,8 @@ export default function KanjiTest() {
             </div>
           </div>
 
-          <Button 
-            className='bg-[#6A7FDB20] font-semibold' 
+          <Button
+            className='bg-[#6A7FDB20] font-semibold'
             onPress={() => router.push('/')}
           >
             Back to Dashboard
@@ -207,8 +207,8 @@ export default function KanjiTest() {
   return (
     <div className="py-6 max-w-2xl mx-auto">
       <div className="mb-6">
-        <Progress 
-          aria-label="Progress" 
+        <Progress
+          aria-label="Progress"
           size="lg"
           label={`Question ${currentQuestion + 1} of ${testData.length}`}
           classNames={{
@@ -216,17 +216,20 @@ export default function KanjiTest() {
             indicator: "bg-[#F56A83]",
             label: "font-bold",
           }}
-          value={progress} 
+          value={progress}
         />
       </div>
 
-      <div className="bg-white flex flex-col w-full max-w-md shadow-sm rounded-3xl mx-auto p-6 gap-6">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="bg-white flex flex-col w-full max-w-md shadow-sm rounded-3xl mx-auto p-6 gap-6">
         <div className="text-center">
           <motion.div
             key={currentQuestion}
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ type: 'spring', mass: 0.7, damping: 20 }} 
+            transition={{ type: 'spring', mass: 0.7, damping: 20 }}
             className="text-9xl font-bold font-jp-round mb-4"
           >
             {currentKanji.kanji.character}
@@ -256,11 +259,10 @@ export default function KanjiTest() {
                     key={index}
                     onPress={() => setSelectedAnswer(option)}
                     size="lg"
-                    className={`w-full font-bold text-lg ${
-                      selectedAnswer === option
+                    className={`w-full font-bold text-lg ${selectedAnswer === option
                         ? 'bg-[#6A7FDB] text-white'
                         : 'bg-[#6A7FDB20] text-black'
-                    }`}
+                      }`}
                   >
                     {option}
                   </Button>
@@ -322,15 +324,15 @@ export default function KanjiTest() {
             <div className="text-lg mt-2">
               Answer: <span className="font-jp-round">{currentKanji.correctAnswer}</span>
             </div>
-            <Button 
-              onPress={handleNext} 
+            <Button
+              onPress={handleNext}
               className='bg-[#6A7FDB20] font-semibold mt-4'
             >
               {currentQuestion < testData.length - 1 ? 'Next Question' : 'See Results'}
             </Button>
           </motion.div>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 }

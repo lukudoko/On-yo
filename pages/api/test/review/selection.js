@@ -7,14 +7,9 @@ export default async function handler(req, res) {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
 
-  const expectedToken = process.env.API_TOKEN || 'fallback-token-for-dev';
-  const providedToken = req.headers['x-api-token'];
-
-  if (providedToken !== expectedToken) {
-    return res.status(403).json({
-      success: false,
-      error: 'Forbidden: Invalid API token'
-    });
+  const referer = req.headers.referer || req.headers.origin;
+  if (!referer || !referer.includes(req.headers.host)) {
+    return res.redirect(307, '/404');
   }
 
   try {

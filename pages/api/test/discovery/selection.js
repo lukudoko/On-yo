@@ -8,11 +8,9 @@ export default async function handler(req, res) {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
 
-  const expectedToken = process.env.API_TOKEN || 'fallback-token-for-dev';
-  const providedToken = req.headers['x-api-token'];
-
-  if (providedToken !== expectedToken) {
-    return res.status(403).json({ success: false, error: 'Forbidden: Invalid API token' });
+  const referer = req.headers.referer || req.headers.origin;
+  if (!referer || !referer.includes(req.headers.host)) {
+    return res.redirect(307, '/404');
   }
 
   try {
@@ -21,7 +19,6 @@ export default async function handler(req, res) {
       return res.status(401).json({ success: false, error: 'Authentication required' });
     }
 
-    // ✅ ONLY select `track` — jlptLevel is computed, not stored
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { track: true }
@@ -32,7 +29,7 @@ export default async function handler(req, res) {
     }
 
     const { track } = user;
-    let computedJlptLevel = 5; // default
+    let computedJlptLevel = 5;
 
     if (track === 'jlpt') {
       computedJlptLevel = await getUserJlptLevel(userId);
@@ -63,7 +60,7 @@ export default async function handler(req, res) {
       kanji: {
         character: k.character,
         primary_onyomi: k.onyomi,
-        jlpt: k.jlpt // this comes from kanji.jlpt_new (handled in discoverytest.js)
+        jlpt: k.jlpt
       }
     }));
 

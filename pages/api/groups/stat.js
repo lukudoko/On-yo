@@ -6,9 +6,14 @@ export default async function handler(req, res) {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
 
+  const referer = req.headers.referer || req.headers.origin;
+  if (!referer || !referer.includes(req.headers.host)) {
+    return res.redirect(307, '/404');
+  }
+
   try {
     const userId = await getUserId(req, res);
-    const { jlpt } = req.query; 
+    const { jlpt } = req.query;
 
     let onyomiGroupsWithProgress;
 
@@ -72,7 +77,7 @@ async function getAllGroups(userId) {
 }
 
 async function getJLPTSpecificGroups(userId, jlptLevel) {
-  // Fix: use jlpt_new instead of jlpt_level
+
   const onyomiGroupsData = await prisma.onyomiGroup.findMany({
     where: {
       kanji: {
@@ -96,7 +101,6 @@ async function getJLPTSpecificGroups(userId, jlptLevel) {
     }
   });
 
-  // Fix: use UserProgress instead of userKanjiProgress
   const allUserProgress = await prisma.UserProgress.findMany({
     where: {
       userId: userId
@@ -109,7 +113,7 @@ async function getJLPTSpecificGroups(userId, jlptLevel) {
 
   const userProgressMap = new Map();
   allUserProgress.forEach(progress => {
-    // Fix: convert masteryLevel to status
+
     let status = 'unlearned';
     if (progress.masteryLevel === 2) {
       status = 'mastered';
@@ -145,7 +149,7 @@ async function getJLPTSpecificGroups(userId, jlptLevel) {
       learning,
       unlearned,
       total: totalKanji,
-      kanjiCount: totalKanji 
+      kanjiCount: totalKanji
     };
   });
 }

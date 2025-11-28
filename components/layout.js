@@ -10,15 +10,14 @@ export default function Layout({ children }) {
         <meta name="theme-color" content="#f9f4ed" />
         <meta
           name="viewport"
-          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+          content="width=device-width, initial-scale=1"
         />
-        <meta name="description" content="Kanji learning app" />
       </Head>
 
-      <div className="min-h-screen bg-[#f9f4ed]">
+      <div>
         <Header />
         <motion.main
-          className='font-noto  pt-20 px-8'
+          className='font-noto pt-16 sm:pt-20 px-4 sm:px-8'
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.2 }}
