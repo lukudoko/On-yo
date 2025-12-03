@@ -79,7 +79,7 @@ export default function Header() {
                 />
               </div>
             </PopoverTrigger>
-            <PopoverContent className="p-4 w-64 rounded-3xl shadow-sm">
+            <PopoverContent className="p-4 w-[90vw] md:w-64 rounded-3xl shadow-sm">
               <div className="flex items-center gap-3">
                 <div className="h-10 relative aspect-square">
                   <Image

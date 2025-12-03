@@ -172,7 +172,7 @@ export default function Home() {
           variants={itemVariants}
           className="flex p-6 flex-col col-span-1 shadow-sm row-span-2 bg-white rounded-3xl"
         >
-          <p className="text-3xl font-bold mb-8">Your Progress</p>
+          <p className="text-xl font-bold mb-8">Your Progress</p>
 
           <div className="flex mx-auto items-baseline mb-6">
             <span className="text-5xl font-extrabold">
@@ -304,8 +304,8 @@ export default function Home() {
           variants={itemVariants}
           className="flex p-6 flex-col justify-between shadow-sm bg-white rounded-3xl"
         >
-          <p className="text-xl font-bold mb-4">Test Yourself!</p>
-          <div className="flex items-end py-3 justify-around">
+          <p className="text-xl font-bold mb-4">Test & Review</p>
+          <div className="flex items-center py-3 justify-around">
             <Button
               as={Link}
               href="/review"
@@ -321,6 +321,14 @@ export default function Home() {
               className="font-medium text-white bg-[#6A7FDB]"
             >
               Discovery
+            </Button>
+                        <Button
+              as={Link}
+              href="/vocab"
+              size="sm"
+              className="font-medium text-white bg-[#6A7FDB]"
+            >
+              Vocab
             </Button>
           </div>
         </motion.div>

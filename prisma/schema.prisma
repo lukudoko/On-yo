@@ -65,11 +65,13 @@ model UserProgress {
 
 model ExampleWord {
   id        Int      @id @default(autoincrement())
-  word      String   @unique
+  word      String   // Remove @unique from here
   reading   String
   meaning   String
   kanji     Kanji    @relation(fields: [kanjiId], references: [id])
   kanjiId   Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  @@unique([word, kanjiId])  // Add this - unique combination
 }
