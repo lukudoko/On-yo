@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { Progress, Accordion, AccordionItem, Spinner, Input, Button, Popover, PopoverTrigger, PopoverContent, Form } from "@heroui/react";
+import { Progress, Accordion, AccordionItem, Spinner, Input, Button } from "@heroui/react";
 import { motion } from "framer-motion";
 import Confetti from 'react-confetti-boom';
 
@@ -17,11 +17,29 @@ const formatMeaning = (meaning) => {
   if (!meaning) return '';
   return meaning
     .split(';')
-    .map(part =>
-      part.trim()
-        .replace(/^\w/, c => c.toUpperCase())
-    )
+    .map(part => part.trim().replace(/^\w/, c => c.toUpperCase()))
     .join(', ');
+};
+
+const updateStreak = async (kanjiId, isCorrect) => {
+  if (!kanjiId || typeof isCorrect !== 'boolean') {
+    console.error('Invalid parameters for updateStreak:', { kanjiId, isCorrect });
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/test/vocab/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kanjiId, isCorrect })
+    });
+
+    if (!response.ok) {
+      console.error('Error updating streak:', await response.text());
+    }
+  } catch (error) {
+    console.error('Error updating streak:', error);
+  }
 };
 
 export default function VocabTest() {
@@ -35,18 +53,16 @@ export default function VocabTest() {
   const [loading, setLoading] = useState(true);
   const [showSummary, setShowSummary] = useState(false);
   const [showSelection, setShowSelection] = useState(true);
-  const [selectedLimit, setSelectedLimit] = useState(null);
-
   const [error, setError] = useState(null);
+
+  console.log(sessionResults)
 
   const currentItem = testData?.[currentQuestion];
   const progress = Math.round(((currentQuestion + 1) / (testData?.length || 1)) * 100);
-
   const loadTestData = async (limit) => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const response = await fetch(`/api/test/vocab/selection?limit=${limit}`, {
-      });
+      const response = await fetch(`/api/test/vocab/selection?limit=${limit}`);
       const data = await response.json();
 
       if (data.success && data.vocab?.length > 0) {
@@ -66,49 +82,25 @@ export default function VocabTest() {
     }
   };
 
-  const handleLimitSelect = (limit) => {
-    setSelectedLimit(limit);
-    loadTestData(limit);
-  };
-
   useEffect(() => {
     if (testData && currentQuestion < testData.length) {
-      const timer = setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 50);
+      const timer = setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 50);
       return () => clearTimeout(timer);
     }
   }, [currentQuestion, testData]);
 
-  const updateStreak = async (kanjiId, isCorrect) => {
-    try {
-      const response = await fetch('/api/test/vocab/update', {
-        method: 'POST',
-        body: JSON.stringify({ kanjiId, isCorrect })
-      });
-      if (!response.ok) {
-        console.error('Error updating streak');
-      }
-    } catch (error) {
-      console.error('Error updating streak:', error);
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!currentItem) return;
 
     const userAnswer = selectedAnswer.trim();
     const correct = currentItem.testType === 'write-in'
       ? userAnswer.toLowerCase() === currentItem.correctAnswer.toLowerCase()
-
       : userAnswer === currentItem.correctAnswer;
 
     setIsCorrect(correct);
     setShowResult(true);
-
-    const result = {
+    setSessionResults(prev => [...prev, {
       kanjiId: currentItem.kanjiId,
       wordId: currentItem.wordId,
       isCorrect: correct,
@@ -116,10 +108,11 @@ export default function VocabTest() {
       correctAnswer: currentItem.correctAnswer,
       word: currentItem.word,
       meaning: currentItem.meaning
-    };
-    setSessionResults(prev => [...prev, result]);
+    }]);
 
-    await updateStreak(currentItem.kanjiId, correct);
+    if (currentItem.kanjiId) {
+      await updateStreak(currentItem.kanjiId, correct);
+    }
   };
 
   const handleNext = () => {
@@ -134,7 +127,8 @@ export default function VocabTest() {
   };
 
   const getAccuracyMessage = (accuracy) => {
-    return ACCURACY_MESSAGES.find(item => accuracy >= item.threshold)?.message || ACCURACY_MESSAGES[ACCURACY_MESSAGES.length - 1].message;
+    return ACCURACY_MESSAGES.find(item => accuracy >= item.threshold)?.message ||
+      ACCURACY_MESSAGES[ACCURACY_MESSAGES.length - 1].message;
   };
 
   if (showSelection) {
@@ -146,24 +140,19 @@ export default function VocabTest() {
           className="bg-white rounded-3xl shadow-sm p-8"
         >
           <div className="text-5xl mb-4">📚</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Choose Vocab Test Length</h2>
-
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">Choose Vocab Test Difficulty</h2>
           <div className="grid grid-cols-3 gap-4 max-w-md mx-auto mb-8">
             {[10, 20, 30].map((limit) => (
               <Button
                 key={limit}
-                onPress={() => handleLimitSelect(limit)}
+                onPress={() => loadTestData(limit)}
                 size="lg"
-                className={`font-semibold ${selectedLimit === limit
-                  ? 'bg-[#6A7FDB] text-white'
-                  : 'bg-[#6A7FDB20] text-black'
-                  }`}
+                className="bg-[#6A7FDB20] text-black font-semibold hover:bg-[#6A7FDB] hover:text-white"
               >
                 {limit} words
               </Button>
             ))}
           </div>
-
           <p className="text-gray-600 text-sm">
             Longer tests provide more comprehensive practice
           </p>
@@ -183,7 +172,7 @@ export default function VocabTest() {
   if (!testData || testData.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl">No vocab items available. Review more kanji first!</div>
+        <div className="text-xl">{error || 'No vocab items available. Review more kanji first!'}</div>
       </div>
     );
   }
@@ -224,10 +213,11 @@ export default function VocabTest() {
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.3, delay: index * 0.02 }}
-                    className={`p-4 flex flex-col justify-center items-center rounded-2xl ${result.isCorrect ? 'bg-[#26A68220]' : 'bg-[#EB475220]'}`}
+                    className={`p-4 flex flex-col justify-center items-center rounded-2xl ${result.isCorrect ? 'bg-[#26A68220]' : 'bg-[#EB475220]'
+                      }`}
                   >
                     <span className="text-2xl font-jp-round font-bold">
-                      {result.word}
+                      {result.word || result.correctAnswer} { }
                     </span>
                     {!result.isCorrect && (
                       <div className="text-xs">Answer: {result.correctAnswer}</div>
@@ -255,7 +245,7 @@ export default function VocabTest() {
           label={`Vocab ${currentQuestion + 1} of ${testData.length}`}
           classNames={{
             base: "max-w-xs mx-auto md:max-w-sm",
-            indicator: "bg-[#F56A83]",
+            indicator: "bg-[#6A7FDB]",
             label: "font-bold",
           }}
           value={progress}
@@ -272,7 +262,8 @@ export default function VocabTest() {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ type: 'spring', mass: 0.7, damping: 20 }}
-          className="flex flex-col gap-2  items-center">
+          className="flex flex-col gap-2 items-center"
+        >
           <div className="text-lg">
             {(() => {
               const reading = currentItem.reading;
@@ -290,29 +281,22 @@ export default function VocabTest() {
               }
               return <span className="font-light">{reading}</span>;
             })()}
-
           </div>
 
-          <div className="flex items-center justify-center font-semibold  text-6xl font-jp-round" >
-
+          <div className="flex items-center justify-center font-semibold text-6xl font-jp-round">
             {currentItem.testType === 'multiple-choice' ? (
-              <>
+              <div className='flex items-center'>
                 {(() => {
-                  const blanked = currentItem.blankedWord;
-                  const parts = blanked.split('_');
-
+                  const parts = currentItem.blankedWord.split('_');
                   return (
-                    <div className='flex items-center'>
-                      {parts[0] && parts[0].trim() && (
-                        <span className='p-2'>{parts[0]}</span>
-                      )}
-                      <div className="flex items-center justify-center rounded-2xl p-2 bg-[#6A7FDB20] overflow-hidden flex items-center justify-center">
+                    <>
+                      {parts[0] && parts[0].trim() && <span className='p-2'>{parts[0]}</span>}
+                      <div className="flex items-center justify-center rounded-2xl p-2 bg-[#6A7FDB20]">
                         {selectedAnswer ? (
                           <motion.span
                             key={selectedAnswer}
                             initial={{ y: 20, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
-                            transition={{ type: 'easeinout' }}
                           >
                             {selectedAnswer}
                           </motion.span>
@@ -320,50 +304,31 @@ export default function VocabTest() {
                           <span className="opacity-0">音</span>
                         )}
                       </div>
-                      {parts[1] && parts[1].trim() && (
-                        <span className='p-2'>{parts[1]}</span>
-                      )}
-                    </div>
+                      {parts[1] && parts[1].trim() && <span className='p-2'>{parts[1]}</span>}
+                    </>
                   );
                 })()}
-              </>
+              </div>
             ) : (
-              <motion.div
-                key={currentQuestion}
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ type: 'spring', mass: 0.7, damping: 20 }}
-                className="text-6xl font-semibold font-jp-round"
-              >
-                {currentItem.word}
-              </motion.div>
+              <div className="text-6xl font-semibold font-jp-round">{currentItem.word}</div>
             )}
           </div>
 
-          <div className="text-base font-semibold">
+          <div className="text-base px-6 text-center font-semibold">
             {formatMeaning(currentItem.meaning)}
           </div>
-
         </motion.div>
 
         {!showResult ? (
-          <Form
-            onSubmit={handleSubmit}
-
-            className="flex flex-col gap-6 items-center justify-center"
-          >
+          <form onSubmit={handleSubmit} className="flex flex-col gap-6 items-center justify-center">
             {currentItem.testType === 'multiple-choice' ? (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="grid grid-cols-3 justify-items-center gap-3"
-              >
+              <div className="grid grid-cols-1 w-full px-6 md:grid-cols-3 justify-items-center gap-3">
                 {currentItem.multipleChoiceOptions.map((option, index) => (
                   <Button
                     key={index}
                     onPress={() => setSelectedAnswer(option)}
                     size="lg"
-                    className={`w-full font-bold text-lg ${selectedAnswer === option
+                    className={`w-full font-bold text-2xl ${selectedAnswer === option
                       ? 'bg-[#6A7FDB] text-white'
                       : 'bg-[#6A7FDB20] text-black'
                       }`}
@@ -371,46 +336,40 @@ export default function VocabTest() {
                     {option}
                   </Button>
                 ))}
-              </motion.div>
+              </div>
             ) : (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                className='flex items-center justify-center gap-2'
-              >
+              <div className='flex items-center justify-center gap-2'>
                 {(() => {
                   const prompt = currentItem.prompt;
-
-                  // Find the position of the first underscore and the text after it
                   const underscoreIndex = prompt.indexOf('＿');
-                  if (underscoreIndex !== -1) {
-                    const before = prompt.substring(0, underscoreIndex);
-                    const after = prompt.substring(prompt.lastIndexOf('＿') + 1); // Get text after the last underscore
 
-                    return (
-                      <div className="flex items-center gap-2">
-                        {before && (
-                          <span className="text-2xl font-bold">{before}</span>
-                        )}
-                        <Input
-                          type="text"
-                          value={selectedAnswer}
-                          onValueChange={setSelectedAnswer}
-                          autoFocus
-                          size="lg"
-                          className='w-16 text-center text-2xl'
-                        />
-                        {after && (
-                          <span className="text-2xl font-bold">{after}</span>
-                        )}
-                      </div>
-                    );
+                  if (underscoreIndex === -1) {
+                    return <span className="text-2xl font-bold">{prompt}</span>;
                   }
 
-                  // Fallback if no underscore found
+                  const before = prompt.substring(0, underscoreIndex);
+                  const after = prompt.substring(prompt.lastIndexOf('＿') + 1);
+
                   return (
-                    <span className="text-2xl font-bold">{prompt}</span>
+                    <>
+                      {before && <span className="text-2xl font-bold">{before}</span>}
+                      <Input
+                        type="text"
+                        value={selectedAnswer}
+                        onValueChange={setSelectedAnswer}
+                        autoFocus
+                        size="lg"
+                        className="w-24"
+                        classNames={{
+                          inputWrapper: "bg-[#6A7FDB20]",
+                          input: "bg-[#6A7FDB20] text-2xl font-bold text-center"
+                        }}
+                      />
+                      {after && <span className="text-2xl font-bold">{after}</span>}
+                    </>
                   );
                 })()}
-              </motion.div>
+              </div>
             )}
 
             <Button
@@ -420,23 +379,26 @@ export default function VocabTest() {
             >
               Check
             </Button>
-          </Form>
+          </form>
         ) : (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center"
           >
+            {isCorrect && currentItem.testType === 'write-in' && (
+              <div className="text-2xl font-bold">
+                <span className="font-jp-round">{currentItem.fullreading}</span>
+              </div>
+            )}
             <div className={`text-2xl font-bold ${isCorrect ? 'text-green-600' : 'text-red-600'}`}>
               {isCorrect ? 'Correct!' : 'Incorrect'}
             </div>
-            <div className="text-lg mt-2">
-              {!isCorrect && (
-                <>
-                  Answer: <span className="font-jp-round">{currentItem.correctAnswer}</span>
-                </>
-              )}
-            </div>
+            {!isCorrect && (
+              <div className="text-lg mt-2">
+                Answer: <span className="font-jp-round">{currentItem.correctAnswer}</span>
+              </div>
+            )}
             <Button
               onPress={handleNext}
               className='bg-[#6A7FDB20] font-semibold mt-4'

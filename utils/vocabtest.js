@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma';
 
 export async function getTestableKanjiForVocab(userId, limit = 30) {
   const now = new Date();
-  const vocabCooldown = 3 * 60 * 60 * 1000; 
+  const vocabCooldown = 3 * 60 * 60 * 1000;
 
   const allTestable = await prisma.userProgress.findMany({
     where: {
@@ -67,7 +67,7 @@ export async function getTestableKanjiForVocab(userId, limit = 30) {
 }
 
 export async function getVocabTestItems(userId, limit = 30) {
-  const testableKanji = await getTestableKanjiForVocab(userId, Math.ceil(limit * 2.5)); 
+  const testableKanji = await getTestableKanjiForVocab(userId, Math.ceil(limit * 2.5));
 
   if (testableKanji.length === 0) return [];
 
@@ -97,7 +97,7 @@ export async function getVocabTestItems(userId, limit = 30) {
       const primaryOnyomi = progress.kanji.readings_on?.[0];
 
       if (primaryOnyomi) {
-        let prompt, correctAnswer;
+        let prompt, correctAnswer, fullreading;
 
         if (kanjiIndex === 0) {
           if (randomWord.reading.length >= primaryOnyomi.length) {
@@ -127,7 +127,8 @@ export async function getVocabTestItems(userId, limit = 30) {
           prompt: prompt,
           correctAnswer: correctAnswer,
           word: randomWord.word,
-          meaning: randomWord.meaning
+          meaning: randomWord.meaning,
+          fullreading: randomWord.reading
         });
       }
     }
