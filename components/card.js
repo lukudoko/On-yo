@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Modal, Chip, ModalContent, ModalHeader, ModalBody, Button, ModalFooter, useDisclosure } from '@heroui/react';
-import { HiBookOpen, HiMiniCheckCircle , HiMiniQuestionMarkCircle    } from "react-icons/hi2";
+import { HiBookOpen, HiMiniCheckCircle, HiMiniQuestionMarkCircle } from "react-icons/hi2";
+import { useStats } from '@/contexts/stats';
 
 const KanjiCard = ({
   kanji,
@@ -18,6 +19,7 @@ const KanjiCard = ({
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [masteryLevel, setMasteryLevel] = useState(initialMasteryLevel);
   const [isUpdating, setIsUpdating] = useState(false);
+  const { refreshStats } = useStats();
 
   useEffect(() => {
     setMasteryLevel(initialMasteryLevel);
@@ -36,37 +38,24 @@ const KanjiCard = ({
 
   const handleMasteryUpdate = async (newLevel) => {
     if (isUpdating) return;
-
     setIsUpdating(true);
     const previousLevel = masteryLevel;
-
     setMasteryLevel(newLevel);
-
     try {
       const response = await fetch('/api/progress/update', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          kanji: kanji,
-          masteryLevel: newLevel
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kanji, masteryLevel: newLevel }),
       });
-
       const result = await response.json();
       if (!result.success) {
         throw new Error(result.error);
       }
-
       onMasteryUpdate?.(kanji, newLevel);
-
-      console.log(`Updated ${kanji} to mastery level ${newLevel}`);
+      refreshStats(); // <-- stats are now stale, force a refresh
     } catch (error) {
       console.error('Error updating mastery level:', error);
-
       setMasteryLevel(previousLevel);
-
     } finally {
       setIsUpdating(false);
     }
@@ -98,7 +87,7 @@ const KanjiCard = ({
     <>
 
       <motion.div
-      onClick={onOpen}
+        onClick={onOpen}
         whileHover={{
           y: -4
         }}
@@ -110,7 +99,7 @@ const KanjiCard = ({
           y: { duration: 0.2, ease: "easeOut" },
           scale: { duration: 0.2, ease: "easeOut" }
         }}
-        className="flex flex-col aspect-square justify-between p-5 h-full rounded-3xl bg-white cursor-pointer transition-shadow duration-200 ease-out hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.6)] active:shadow-[3px_3px_0px_0px_rgba(0,0,0,0.6)] shadow-sm relative"      >
+        className="flex flex-col aspect-square justify-between p-5 h-full rounded-3xl bg-white cursor-pointer transition-shadow duration-200 ease-out hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,0.6)] active:shadow-[3px_3px_0px_0px_rgba(0,0,0,0.6)] shadow-sm relative"      >
 
         <div className="absolute top-3 left-3">
           <div
@@ -122,7 +111,7 @@ const KanjiCard = ({
         <div className="flex flex-1 items-center font-bold justify-center text-center text-6xl md:text-9xl font-jp-round">
           {kanji}
         </div>
-          <div className="absolute top-3 right-3">
+        <div className="absolute top-3 right-3">
           <p className="flex items-center justify-center font-bold  bg-gray-800  text-white aspect-square p-2 text-xs rounded-full">
             N{jlpt_new}
           </p>
@@ -274,7 +263,7 @@ const KanjiCard = ({
                     isLoading={isUpdating && masteryLevel === 2}
                     size='lg'
                   >
-                    <HiMiniCheckCircle  size={22} />
+                    <HiMiniCheckCircle size={22} />
                   </Button>
                   <Button
                     className="font-medium bg-[#FE9D0B] text-white"
@@ -294,7 +283,7 @@ const KanjiCard = ({
                     isLoading={isUpdating && masteryLevel === 0}
                     size='lg'
                   >
-                    <HiMiniQuestionMarkCircle    size={22} />
+                    <HiMiniQuestionMarkCircle size={22} />
                   </Button>
                 </div>
               </ModalFooter>

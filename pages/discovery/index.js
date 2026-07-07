@@ -3,6 +3,8 @@ import { useRouter } from 'next/router';
 import { Progress, Spinner, Input, Button } from "@heroui/react";
 import { motion } from "framer-motion";
 import Confetti from 'react-confetti-boom';
+import { useStats } from '@/contexts/stats';
+
 
 const API_HEADERS = {
   'Content-Type': 'application/json',
@@ -18,7 +20,7 @@ export default function DiscoveryTest() {
   const [loading, setLoading] = useState(true);
   const [showCompletion, setShowCompletion] = useState(false);
   const [error, setError] = useState(null);
-
+  const { refreshStats } = useStats();
   const currentKanji = testData?.[currentQuestion];
   const progress = Math.round(((currentQuestion + 1) / (testData?.length || 1)) * 100);
 
@@ -58,13 +60,23 @@ export default function DiscoveryTest() {
 
   const updateDiscoveryProgress = async (kanjiId, isCorrect) => {
     try {
-      await fetch('/api/test/discovery/updateProgress', {
+      await fetch('/api/test/discovery/update', {
         method: 'POST',
         headers: API_HEADERS,
         body: JSON.stringify({ kanjiId, isCorrect })
       });
+      
+      if (!response.ok) {
+        console.error('Error updating streak');
+        return;
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        refreshStats();
+      }
     } catch (error) {
-      console.error('Error updating discovery progress:', error);
+      console.error('Error updating streak:', error);
     }
   };
 

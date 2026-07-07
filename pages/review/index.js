@@ -3,6 +3,8 @@ import { useRouter } from 'next/router';
 import { Progress, Accordion, AccordionItem, Spinner, Input, Button, Popover, PopoverTrigger, PopoverContent, Form } from "@heroui/react";
 import { motion } from "framer-motion";
 import Confetti from 'react-confetti-boom';
+import { useStats } from '@/contexts/stats';
+
 
 const ACCURACY_MESSAGES = [
   { threshold: 90, message: "Amazing Work!" },
@@ -24,25 +26,36 @@ export default function KanjiTest() {
   const [loading, setLoading] = useState(true);
   const [showSummary, setShowSummary] = useState(false);
   const [formattedMeanings, setFormattedMeanings] = useState(null);
-
+  const { refreshStats } = useStats();
   const currentKanji = testData?.[currentQuestion];
   const progress = Math.round(((currentQuestion + 1) / (testData?.length || 1)) * 100);
 
   useEffect(() => {
+    let isCancelled = false;
+
     const loadTestData = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/test/review/selection', {
-        });
+        const response = await fetch('/api/test/review/selection', {});
         const data = await response.json();
-        setTestData(data.kanji);
+
+        if (!isCancelled) {
+          setTestData(data.kanji);
+        }
       } catch (error) {
         console.error('Error loading test:', error);
       } finally {
-        setLoading(false);
+        if (!isCancelled) {
+          setLoading(false);
+        }
       }
     };
+
     loadTestData();
+
+    return () => {
+      isCancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -72,22 +85,29 @@ export default function KanjiTest() {
     ));
   };
 
-const updateStreak = async (kanjiId, isCorrect) => {
-  try {
-    const response = await fetch('/api/test/review/updateStreak', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ kanjiId, isCorrect })
-    });
-    if (!response.ok) {
-      console.error('Error updating streak');
+  const updateStreak = async (kanjiId, isCorrect) => {
+    try {
+      const response = await fetch('/api/test/review/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ kanjiId, isCorrect })
+      });
+
+      if (!response.ok) {
+        console.error('Error updating streak');
+        return;
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        refreshStats();
+      }
+    } catch (error) {
+      console.error('Error updating streak:', error);
     }
-  } catch (error) {
-    console.error('Error updating streak:', error);
-  }
-};
+  };
 
   const handleSubmit = async () => {
     if (!currentKanji) return;
@@ -202,19 +222,7 @@ const updateStreak = async (kanjiId, isCorrect) => {
 
   return (
     <div className="py-6 max-w-2xl mx-auto">
-      <div className="mb-6">
-        <Progress
-          aria-label="Progress"
-          size="lg"
-          label={`Question ${currentQuestion + 1} of ${testData.length}`}
-          classNames={{
-            base: "max-w-xs mx-auto md:max-w-sm",
-            indicator: "bg-[#6A7FDB]",
-            label: "font-bold",
-          }}
-          value={progress}
-        />
-      </div>
+
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -269,7 +277,7 @@ const updateStreak = async (kanjiId, isCorrect) => {
                   type="text"
                   value={selectedAnswer}
                   onValueChange={setSelectedAnswer}
-                  label="Enter the reading"
+                  placeholder="Enter the reading"
                   autoFocus
                   size="lg"
                   classNames={{
@@ -333,6 +341,20 @@ const updateStreak = async (kanjiId, isCorrect) => {
           </motion.div>
         )}
       </motion.div>
+
+      <div className="my-6">
+        <Progress
+          aria-label="Progress"
+          size="lg"
+          label={`${currentQuestion + 1}/${testData.length}`}
+          classNames={{
+            base: "max-w-xs mx-auto md:max-w-sm",
+            indicator: "bg-[#6A7FDB]",
+            label: "font-bold",
+          }}
+          value={progress}
+        />
+      </div>
     </div>
   );
 }

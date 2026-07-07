@@ -1,215 +1,128 @@
-import { prisma } from '@/lib/prisma';
+import { getUserJlptProgress } from '@/utils/jlpt';
 
-export class ProgressService {
+export async function getGoalProgress(userId, track, goalLevel) {
 
-  static async updateKanjiMastery(userId, kanjiCharacter, masteryLevel) {
-    if (!userId) return null;
-
-    try {
-
-      const result = await prisma.$transaction(async (tx) => {
-        const kanji = await tx.kanji.findUnique({
-          where: { character: kanjiCharacter },
-          select: { id: true }
-        });
-
-        if (!kanji) {
-          throw new Error(`Kanji ${kanjiCharacter} not found`);
-        }
-
-        return await tx.userProgress.upsert({
-          where: {
-            userId_kanjiId: {
-              userId: userId,
-              kanjiId: kanji.id
-            }
-          },
-          update: {
-            masteryLevel: masteryLevel,
-            lastStudied: new Date()
-          },
-          create: {
-            userId: userId,
-            kanjiId: kanji.id,
-            masteryLevel: masteryLevel,
-            lastStudied: new Date()
-          }
-        });
-      });
-
-      return result;
-    } catch (error) {
-      console.error('Error updating kanji mastery:', error);
-      throw error;
-    }
+  if (!goalLevel) {
+    const jlptProgress = track === 'jlpt' ? await getUserJlptProgress(userId) : await getUserJlptProgress(userId);
+    return calculateOverallProgress(jlptProgress);
   }
 
-  static async getBatchKanjiMastery(userId, kanjiCharacters) {
-    if (!userId) {
-      return kanjiCharacters.reduce((acc, char) => ({ ...acc, [char]: 0 }), {});
-    }
+  const jlptProgress = track === 'jlpt' ? await getUserJlptProgress(userId) : await getUserJlptProgress(userId);
 
-    try {
-
-      const results = await prisma.kanji.findMany({
-        where: { 
-          character: { in: kanjiCharacters } 
-        },
-        select: {
-          character: true,
-          progress: {
-            where: { userId: userId },
-            select: { masteryLevel: true }
-          }
-        }
-      });
-
-      const masteryLevels = {};
-
-      kanjiCharacters.forEach(char => {
-        masteryLevels[char] = 0;
-      });
-
-      results.forEach(kanji => {
-        masteryLevels[kanji.character] = kanji.progress[0]?.masteryLevel || 0;
-      });
-
-      return masteryLevels;
-    } catch (error) {
-      console.error('Error getting batch kanji mastery:', error);
-      return kanjiCharacters.reduce((acc, char) => ({ ...acc, [char]: 0 }), {});
-    }
-  }
-
-  static async getAllOnyomiGroupsProgress(userId) {
-    if (!userId) return new Map();
-
-    try {
-
-      const results = await prisma.userProgress.findMany({
-        where: { userId: userId },
-        select: {
-          masteryLevel: true,
-          kanji: {
-            select: { primary_onyomi: true }
-          }
-        }
-      });
-
-      const progressByOnyomi = new Map();
-
-      results.forEach(({ masteryLevel, kanji }) => {
-        if (!kanji?.primary_onyomi) return;
-
-        const onyomi = kanji.primary_onyomi;
-        if (!progressByOnyomi.has(onyomi)) {
-          progressByOnyomi.set(onyomi, { mastered: 0, learning: 0, unlearned: 0 });
-        }
-
-        const counts = progressByOnyomi.get(onyomi);
-        if (masteryLevel === 2) counts.mastered++;
-        else if (masteryLevel === 1) counts.learning++;
-      });
-
-      return progressByOnyomi;
-    } catch (error) {
-      console.error('Error getting onyomi groups progress:', error);
-      return new Map();
-    }
-  }
-
-  static async getOnyomiGroupProgress(userId, onyomiReading) {
-    const defaultResult = { mastered: 0, learning: 0, unlearned: 0, total: 0 };
-
-    if (!userId) return defaultResult;
-
-    try {
-
-      const results = await prisma.kanji.findMany({
-        where: { primary_onyomi: onyomiReading },
-        select: {
-          id: true,
-          progress: {
-            where: { userId: userId },
-            select: { masteryLevel: true }
-          }
-        }
-      });
-
-      if (results.length === 0) return defaultResult;
-
-      let mastered = 0;
-      let learning = 0;
-      let unlearned = 0;
-
-      results.forEach(kanji => {
-        const masteryLevel = kanji.progress[0]?.masteryLevel || 0;
-        if (masteryLevel === 2) mastered++;
-        else if (masteryLevel === 1) learning++;
-        else unlearned++;
-      });
-
-      return {
-        mastered,
-        learning,
-        unlearned,
-        total: results.length
-      };
-    } catch (error) {
-      console.error('Error getting onyomi group progress:', error);
-      return defaultResult;
-    }
-  }
-
-  static async getOverallProgress(userId) {
-    try {
-      const totalKanji = await prisma.kanji.count();
-
-      if (!userId) {
-        return { mastered: 0, learning: 0, unlearned: totalKanji, total: totalKanji };
-      }
-
-      const progressStats = await prisma.userProgress.groupBy({
-        by: ['masteryLevel'],
-        where: { userId: userId },
-        _count: true
-      });
-
-      const stats = {
-        mastered: 0,
-        learning: 0,
-        unlearned: totalKanji,
-        total: totalKanji
-      };
-
-      let totalStudied = 0;
-      progressStats.forEach(stat => {
-        const count = stat._count;
-        totalStudied += count;
-
-        if (stat.masteryLevel === 2) stats.mastered = count;
-        else if (stat.masteryLevel === 1) stats.learning = count;
-      });
-
-      stats.unlearned = totalKanji - totalStudied;
-      return stats;
-    } catch (error) {
-      console.error('Error getting overall progress:', error);
-      const totalKanji = await prisma.kanji.count() || 0;
-      return { mastered: 0, learning: 0, unlearned: totalKanji, total: totalKanji };
-    }
+  if (track === 'jlpt') {
+    return calculateJlptGoalProgress(goalLevel, jlptProgress);
+  } else {
+    return calculateStatGoalProgress(goalLevel, jlptProgress);
   }
 }
 
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/pages/api/auth/[...nextauth]";
+function calculateOverallProgress(jlptProgress) {
 
-export async function getUserId(req, res) {
-  try {
-    const session = await getServerSession(req, res, authOptions);
-    return session?.user?.id || null;
-  } catch (error) {
-    console.error('Error getting user ID from session:', error);
-    return null;
+  let totalMastered = 0;
+  let totalLearning = 0;
+  let totalUnlearned = 0;
+  let totalKanji = 0;
+
+  Object.values(jlptProgress).forEach(level => {
+    totalMastered += level.mastered;
+    totalLearning += level.learning;
+    totalUnlearned += level.unlearned;
+    totalKanji += level.totalKanji;
+  });
+
+  return {
+    mastered: totalMastered,
+    learning: totalLearning,
+    unlearned: totalUnlearned,
+    total: totalKanji,
+    percentage: Math.round((totalMastered / totalKanji) * 100)
+  };
+}
+
+function calculateJlptGoalProgress(goalLevel, jlptProgress) {
+  const levels = ['n5', 'n4', 'n3', 'n2', 'n1'];
+  const targetIndex = levels.indexOf(goalLevel);
+
+  let totalMastered = 0;
+  let totalLearning = 0;
+  let totalUnlearned = 0;
+  let totalKanji = 0;
+
+  for (let i = 0; i <= targetIndex; i++) {
+    const level = levels[i];
+    totalMastered += jlptProgress[level].mastered;
+    totalLearning += jlptProgress[level].learning;
+    totalUnlearned += jlptProgress[level].unlearned;
+    totalKanji += jlptProgress[level].totalKanji;
+  }
+
+  return {
+    mastered: totalMastered,
+    learning: totalLearning,
+    unlearned: totalUnlearned,
+    total: totalKanji,
+    percentage: Math.round((totalMastered / totalKanji) * 100),
+    goalLevel,
+    goalName: `JLPT ${goalLevel.toUpperCase()}`
+  };
+}
+
+function calculateStatGoalProgress(goalLevel, jlptProgress) {
+  const statGrouping = {
+    n5: { levels: ['n5'], name: 'Beginner' },                    
+    n4: { levels: ['n5', 'n4', 'n3'], name: 'Intermediate' },   
+    n3: { levels: ['n5', 'n4', 'n3'], name: 'Intermediate' },   
+    n2: { levels: ['n5', 'n4', 'n3', 'n2'], name: 'Advanced' }, 
+    n1: { levels: ['n5', 'n4', 'n3', 'n2', 'n1'], name: 'Native' }
+  };
+
+  const config = statGrouping[goalLevel] || statGrouping['n4']; 
+
+  if (!config) {
+
+    return calculateOverallProgress(jlptProgress);
+  }
+
+  let totalMastered = 0;
+  let totalLearning = 0;
+  let totalUnlearned = 0;
+  let totalKanji = 0;
+
+  config.levels.forEach(level => {
+    totalMastered += jlptProgress[level].mastered;
+    totalLearning += jlptProgress[level].learning;
+    totalUnlearned += jlptProgress[level].unlearned;
+    totalKanji += jlptProgress[level].totalKanji;
+  });
+
+  return {
+    mastered: totalMastered,
+    learning: totalLearning,
+    unlearned: totalUnlearned,
+    total: totalKanji,
+    percentage: Math.round((totalMastered / totalKanji) * 100),
+    goalLevel,
+    goalName: config.name
+  };
+}
+
+export function getAvailableGoals(track) {
+  if (track === 'jlpt') {
+    return [
+      { value: 'n5', label: 'JLPT N5', description: 'Master 80 basic kanji' },
+      { value: 'n4', label: 'JLPT N4', description: 'Expand to 250 kanji' },
+      { value: 'n3', label: 'JLPT N3', description: 'Intermediate 370 kanji' },
+      { value: 'n2', label: 'JLPT N2', description: 'Advanced 1000+ kanji' },
+      { value: 'n1', label: 'JLPT N1', description: 'Mastery of 2000+ kanji' }
+    ];
+  } else {
+    return [
+      { value: 'n5', label: 'Beginner', description: 'Start with N5 kanji (80)' },
+      { value: 'n3', label: 'Intermediate', description: 'Master up to N3 (250+ kanji)' }, 
+
+      { value: 'n2', label: 'Advanced', description: 'Master up to N2 (500+ kanji)' },
+      { value: 'n1', label: 'Native', description: 'Complete mastery (2000+ kanji)' }
+    ];
   }
 }
+

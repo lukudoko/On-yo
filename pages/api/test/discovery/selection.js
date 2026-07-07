@@ -1,76 +1,21 @@
-import { getUserId } from '@/utils/progress';
-import { getDiscoveryKanji } from '@/utils/discoverytest';
-import { getUserJlptLevel } from '@/utils/jlpt';
-import { prisma } from '@/lib/prisma';
+import { DiscoveryTestService } from '@/services/tests/discoveryService';
+
+const service = new DiscoveryTestService();
 
 export default async function handler(req, res) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ success: false, error: 'Method not allowed' });
-  }
-
-  const referer = req.headers.referer || req.headers.origin;
-  if (!referer || !referer.includes(req.headers.host)) {
-    return res.redirect(307, '/404');
-  }
-
   try {
-    const userId = await getUserId(req, res);
-    if (!userId) {
-      return res.status(401).json({ success: false, error: 'Authentication required' });
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { track: true }
-    });
-
-    if (!user) {
-      return res.status(404).json({ success: false, error: 'User not found' });
-    }
-
-    const { track } = user;
-    let computedJlptLevel = 5;
-
-    if (track === 'jlpt') {
-      computedJlptLevel = await getUserJlptLevel(userId);
-    }
-
-    const discoveryKanji = await getDiscoveryKanji(userId, track, computedJlptLevel, 7);
-
-    if (discoveryKanji.length === 0) {
-      let message;
-      if (track === 'jlpt') {
-        message = `You've discovered all kanji in JLPT N${computedJlptLevel}! Keep reviewing to unlock the next level.`;
-      } else {
-        message = "You've discovered all available kanji! Master more kanji in your review tests to unlock new groups.";
-      }
-      return res.status(200).json({
-        success: false,
-        error: message,
-        kanji: []
-      });
-    }
-
-    const formatted = discoveryKanji.map(k => ({
-      kanjiId: k.id,
-      testType: 'write-in',
-      correctAnswer: k.onyomi,
-      hints: k.knownPeers,
-      masteryLevel: 0,
-      kanji: {
-        character: k.character,
-        primary_onyomi: k.onyomi,
-        jlpt: k.jlpt
-      }
-    }));
-
-    return res.status(200).json({
-      success: true,
-      kanji: formatted
-    });
-
+    const userId = await service.validateRequest(req, res);
+    const result = await service.getTestItemsWithTrack(userId);
+    
+    res.status(200).json(result);
   } catch (error) {
-    console.error('Discovery test error:', error);
-    res.status(500).json({ success: false, error: 'Internal server error' });
+    if (error.message === 'Invalid referer') {
+      res.redirect(307, '/404');
+    } else if (error.message === 'Authentication required') {
+      res.status(401).json(service.formatError(error));
+    } else {
+      console.error('Discovery test error:', error);
+      res.status(500).json(service.formatError(error));
+    }
   }
 }

@@ -4,6 +4,7 @@ import OnyomiGroupCard from '@/components/onyomigroupcards';
 import { Select, SelectItem, Chip } from "@heroui/react";
 import { HiBookOpen, HiMiniCheckCircle } from "react-icons/hi2";
 import { motion } from 'framer-motion';
+import { useStats } from '@/contexts/stats';
 
 const cardVariants = {
   hidden: { opacity: 0 },
@@ -16,9 +17,10 @@ const cardVariants = {
 const LoadingSkeleton = () => (
   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
     {Array.from({ length: 8 }).map((_, i) => (
-      <div 
-        key={i} 
-        className="w-full aspect-square rounded-3xl bg-gray-200 animate-pulse p-6" // Match your card's padding
+      <div
+        key={i}
+        className="w-full aspect-square rounded-3xl bg-gray-200 animate-pulse p-6" 
+
       >
       </div>
     ))}
@@ -84,7 +86,7 @@ const LevelSelector = ({ selectedLevel, onChange }) => {
 
 export default function LearnPage() {
   const router = useRouter();
-
+  const { stats } = useStats();
   const [groups, setGroups] = useState([]);
   const [mode, setMode] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -101,16 +103,15 @@ export default function LearnPage() {
   }, [selectedLevel]);
 
   const fetchData = useCallback(async () => {
+    if (!stats?.track) return; 
+
     setLoading(true);
     setError(null);
 
     try {
-      const trackRes = await fetch("/api/user/track", {
-        headers: { 'X-API-Token': process.env.NEXT_PUBLIC_API_TOKEN }
-      });
-      const trackJson = await trackRes.json();
+      const track = stats.track; 
 
-      const isJlpt = trackRes.ok && trackJson.data?.track === "jlpt";
+      const isJlpt = track === "jlpt";
       setMode(isJlpt ? "jlpt" : "stats");
 
       const groupsUrl = isJlpt
@@ -131,13 +132,15 @@ export default function LearnPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedLevel]);
+  }, [selectedLevel, stats?.track]);
 
   useEffect(() => {
-    fetchData();
+    if (stats?.track) {
+      fetchData();
+    }
   }, [fetchData]);
 
-  const stats = groups.reduce(
+  const kanjistats = groups.reduce(
     (acc, g) => {
       const total = g.total ?? g.kanjiCount ?? 0;
       acc.totalKanji += total;
@@ -148,8 +151,8 @@ export default function LearnPage() {
     { totalKanji: 0, mastered: 0, learning: 0 }
   );
 
-  const percentage = stats.totalKanji
-    ? Math.round(((stats.mastered + stats.learning * 0.5) / stats.totalKanji) * 100)
+  const percentage = kanjistats.totalKanji
+    ? Math.round(((kanjistats.mastered + kanjistats.learning * 0.5) / kanjistats.totalKanji) * 100)
     : 0;
 
   return (
@@ -172,7 +175,7 @@ export default function LearnPage() {
                   content: "text-white font-semibold",
                 }}
                 className='bg-[#6A7FDB]'>
-                {stats.totalKanji} 字
+                {kanjistats.totalKanji} 字
               </Chip>
               <Chip
                 classNames={{
@@ -189,7 +192,7 @@ export default function LearnPage() {
                 }}
                 startContent={<HiMiniCheckCircle className='fill-white' />}
                 className='bg-[#26A682]'>
-                {stats.mastered}
+                {kanjistats.mastered}
               </Chip>
 
               <Chip
@@ -199,7 +202,7 @@ export default function LearnPage() {
                 }}
                 startContent={<HiBookOpen className='fill-white' />}
                 className='bg-[#FE9D0B]'>
-                {stats.learning}
+                {kanjistats.learning}
               </Chip>
             </div>
           )}

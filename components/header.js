@@ -1,32 +1,22 @@
-import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { Popover, PopoverTrigger, PopoverContent, Button, Spinner } from "@heroui/react";
 import { motion } from "framer-motion";
 import { useStats } from '@/contexts/stats';
+import { SegmentedProgressBar } from '@/components/progressDisplays';
 
 export default function Header() {
   const { data: session, status } = useSession();
-  const { stats, loading: loadingStats, error, fetchStats } = useStats();
   const [isOpen, setIsOpen] = useState(false);
-  const previousIsOpenRef = useRef(isOpen);
-
-  useEffect(() => {
-    if (status === "authenticated" && !stats && !loadingStats) {
-      fetchStats();
-    }
-  }, [status, stats, loadingStats, fetchStats]);
-
-  useEffect(() => {
-    if (isOpen && !previousIsOpenRef.current && status === "authenticated") {
-      fetchStats();
-    }
-    previousIsOpenRef.current = isOpen;
-  }, [isOpen, status, fetchStats]);
+  const { stats, loading: loadingStats, error, fetchStats, refreshStats } = useStats();
 
   const handleOpenChange = (open) => {
     setIsOpen(open);
+    if (open && status === "authenticated" && !stats) {
+      fetchStats();
+    }
   };
 
   const getHeaderStats = () => {
@@ -56,9 +46,9 @@ export default function Header() {
   const headerStats = getHeaderStats();
 
   return (
-    <div className="fixed bg-[#f9f4ed] xl:bg-transparent z-50 flex w-full items-center justify-between top-0 py-3 px-8">
+    <div className="fixed backdrop-blur-xl xl:backdrop-blur-none bg-[#f9f4ed90] shadow-xs xl:shadow-none xl:bg-transparent z-50 flex w-full items-center justify-between top-0 py-3 px-8">
       <Link href="/">
-        <p className="text-2xl font-jp font-bold w-12">On&apos; yo!</p>
+        <p className="text-xl/6.5 tracking-wider font-jp font-bold w-14 h-14">On&apos; yo!</p>
       </Link>
 
       {status === "authenticated" ? (
@@ -69,7 +59,7 @@ export default function Header() {
         >
           <Popover placement="bottom-end" isOpen={isOpen} onOpenChange={handleOpenChange}>
             <PopoverTrigger>
-              <div className="h-12 relative aspect-square  cursor-pointer">
+              <div className="h-12 relative aspect-square cursor-pointer">
                 <Image
                   src={session.user.image || "/jblog.webp"}
                   alt="Profile Picture"
@@ -104,30 +94,25 @@ export default function Header() {
                 </div>
               ) : stats ? (
                 <div className="space-y-4 py-4 w-full">
-
                   <div className="flex justify-center items-baseline mb-2">
                     <span className="text-lg font-extrabold">{Math.round((stats.progress.mastered / stats.progress.total) * 100)}% </span>
-                    <span className="text-xs  ml-1"> completed </span>
+                    <span className="text-xs ml-1"> completed </span>
                   </div>
 
                   <div className="w-full mb-4 px-2">
-                    <div className="flex overflow-hidden rounded-full h-3">
-                      <div
-                        className="bg-[#26A682] flex items-center justify-center"
-                        style={{ width: `${(stats.progress.mastered / stats.progress.total) * 100}%` }}
-                      />
-                      <div
-                        className="bg-[#FE9D0B] flex items-center justify-center"
-                        style={{ width: `${(stats.progress.learning / stats.progress.total) * 100}%` }}
-                      />
-                      <div
-                        className="bg-[#EB4752] flex items-center justify-center"
-                        style={{ width: `${(stats.progress.unlearned / stats.progress.total) * 100}%` }}
-                      />
-                    </div>
+
+                    <SegmentedProgressBar
+                      mastered={stats?.progress.mastered}
+                      learning={stats?.progress.learning}
+                      unlearned={stats?.progress.unlearned}
+                      totalKanji={stats?.progress.total}
+                      showLabels={false}
+                      alwaysExpanded
+                      hasProgressData={!loadingStats}
+                    />
                   </div>
 
-                  {/* Track-specific stats */}
+                  {}
                   {stats.track === 'jlpt' ? (
                     <div className="space-y-2">
                       <div className="grid grid-cols-2 gap-2">

@@ -1,7 +1,6 @@
-import { getUserId } from '@/utils/progress';
-import { getDashboardData } from '@/utils/dashboard';
-import { getUserJlptLevel } from '@/utils/jlpt';
-import { prisma } from '@/lib/prisma';
+import { getUserId } from '@/services/user';
+
+import { getUserStats } from '@/services/user/statsService';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -28,33 +27,14 @@ export default async function handler(req, res) {
       });
     }
 
-    const fullData = await getDashboardData(req, res);
-    if (fullData === null) {
-      return res.status(500).json({
-        success: false,
-        error: 'Failed to load dashboard data'
-      });
-    }
+    const statsData = await getUserStats(userId);
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { track: true }
-    });
-
-    const jlptLevel = await getUserJlptLevel(userId);
-
-    const fullDashboardData = {
-      ...fullData,
-      track: user?.track || 'stat',
-      jlptLevel: jlptLevel
-    };
-
-    return res.status(200).json({
+   return res.status(200).json({
       success: true,
-      data: fullDashboardData
+       data: statsData  
     });
   } catch (error) {
-    console.error('API Error in full dashboard:', error);
+    console.error('API Error in user stats:', error);
     return res.status(500).json({ success: false, error: 'Internal server error' });
   }
 }

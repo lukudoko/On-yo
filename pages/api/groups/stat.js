@@ -1,4 +1,5 @@
-import { ProgressService, getUserId } from '@/utils/progress';
+import { getUserId } from '@/services/user';
+import { ProgressService } from '@/services/progress';
 import { prisma } from '@/lib/prisma';
 
 export default async function handler(req, res) {

@@ -1,4 +1,3 @@
-// utils/groupStats.js
 import { prisma } from '@/lib/prisma';
 
 export async function getGroupStats(userId) {

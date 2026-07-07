@@ -1,5 +1,5 @@
-import { ProgressService, getUserId } from '@/utils/progress';
-import { updateStreak } from '@/utils/streak';
+import { getUserId } from '@/services/user';
+import { updateKanjiProgress } from '@/services/progress/updateService';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -13,21 +13,6 @@ export default async function handler(req, res) {
 
   try {
     const { kanji, masteryLevel } = req.body;
-
-    if (!kanji || masteryLevel === undefined) {
-      return res.status(400).json({
-        success: false,
-        error: 'Kanji and masteryLevel are required'
-      });
-    }
-
-    if (![0, 1, 2].includes(masteryLevel)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid mastery level. Must be 0, 1, or 2'
-      });
-    }
-
     const userId = await getUserId(req, res);
 
     if (!userId) {
@@ -37,17 +22,14 @@ export default async function handler(req, res) {
       });
     }
 
-    const result = await ProgressService.updateKanjiMastery(userId, kanji, masteryLevel);
-    await updateStreak(userId);
-
+    const result = await updateKanjiProgress(userId, kanji, masteryLevel);
     res.status(200).json({ success: true, result });
+
   } catch (error) {
     console.error('API Error in update progress:', error);
-
-    if (error.message.includes('not found')) {
-      return res.status(404).json({ success: false, error: error.message });
+    if (error.message.includes('not found') || error.message.includes('required')) {
+      return res.status(400).json({ success: false, error: error.message });
     }
-
     res.status(500).json({ success: false, error: 'Internal server error' });
   }
 }

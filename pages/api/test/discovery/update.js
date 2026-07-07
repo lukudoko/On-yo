@@ -20,7 +20,7 @@ export default async function handler(req, res) {
     }
 
     const { kanjiId, isCorrect } = req.body;
-    const result = await service.updateProgress(userId, kanjiId, isCorrect, 'vocab');
+    const result = await service.updateProgress(userId, kanjiId, isCorrect, 'discovery');
     
     res.status(200).json(result);
 
@@ -31,7 +31,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, error: error.message });
     }
     
-    console.error('Vocab update error:', error);
+    console.error('Discovery update error:', error);
     res.status(500).json({ success: false, error: 'Internal server error' });
   }
 }

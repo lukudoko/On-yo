@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import { Progress, Accordion, AccordionItem, Spinner, Input, Button } from "@heroui/react";
 import { motion } from "framer-motion";
 import Confetti from 'react-confetti-boom';
+import { useStats } from '@/contexts/stats';
 
 const ACCURACY_MESSAGES = [
   { threshold: 90, message: "Amazing Work!" },
@@ -12,6 +13,20 @@ const ACCURACY_MESSAGES = [
   { threshold: 50, message: "Not bad! 🤔" },
   { threshold: 0, message: "Keep practicing! 🔥" }
 ];
+
+export default function VocabTest() {
+  const router = useRouter();
+  const [testData, setTestData] = useState(null);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [selectedAnswer, setSelectedAnswer] = useState('');
+  const [showResult, setShowResult] = useState(false);
+  const [isCorrect, setIsCorrect] = useState(false);
+  const [sessionResults, setSessionResults] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showSummary, setShowSummary] = useState(false);
+  const [showSelection, setShowSelection] = useState(true);
+  const [error, setError] = useState(null);
+  const { refreshStats } = useStats();
 
 const formatMeaning = (meaning) => {
   if (!meaning) return '';
@@ -35,27 +50,19 @@ const updateStreak = async (kanjiId, isCorrect) => {
     });
 
     if (!response.ok) {
-      console.error('Error updating streak:', await response.text());
+      console.error('Error updating streak');
+      return;
+    }
+
+    const result = await response.json();
+    if (result.success) {
+      refreshStats(); 
+
     }
   } catch (error) {
     console.error('Error updating streak:', error);
   }
 };
-
-export default function VocabTest() {
-  const router = useRouter();
-  const [testData, setTestData] = useState(null);
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState('');
-  const [showResult, setShowResult] = useState(false);
-  const [isCorrect, setIsCorrect] = useState(false);
-  const [sessionResults, setSessionResults] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showSummary, setShowSummary] = useState(false);
-  const [showSelection, setShowSelection] = useState(true);
-  const [error, setError] = useState(null);
-
-  console.log(sessionResults)
 
   const currentItem = testData?.[currentQuestion];
   const progress = Math.round(((currentQuestion + 1) / (testData?.length || 1)) * 100);
@@ -291,7 +298,7 @@ export default function VocabTest() {
                   return (
                     <>
                       {parts[0] && parts[0].trim() && <span className='p-2'>{parts[0]}</span>}
-                      <div className="flex items-center justify-center rounded-2xl p-2 bg-[#6A7FDB20]">
+                      <div className="flex overflow-hidden items-center justify-center rounded-2xl p-2 bg-[#6A7FDB20]">
                         {selectedAnswer ? (
                           <motion.span
                             key={selectedAnswer}

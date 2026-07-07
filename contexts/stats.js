@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useRef, useContext, useState, useEffect, useCallback } from 'react';
 
 const StatsContext = createContext();
 
@@ -6,17 +6,16 @@ export function StatsProvider({ children }) {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const loadingRef = useRef(false);
 
   const fetchStats = useCallback(async () => {
-    if (loading) return; 
-
+    if (loadingRef.current) return;
+    loadingRef.current = true;
     setLoading(true);
     setError(null);
     try {
       const response = await fetch("/api/user/stats", {
-        headers: {
-          'X-API-Token': process.env.NEXT_PUBLIC_API_TOKEN
-        }
+        headers: { 'X-API-Token': process.env.NEXT_PUBLIC_API_TOKEN }
       });
       const json = await response.json();
       if (json.success) {
@@ -28,22 +27,28 @@ export function StatsProvider({ children }) {
       console.error("Error fetching stats:", error);
       setError("Network error. Please try again.");
     } finally {
+      loadingRef.current = false;
       setLoading(false);
     }
-  }, [loading]);
+  }, []);
 
   const refreshStats = useCallback(() => {
     setStats(null);
+    loadingRef.current = false; 
+    fetchStats();
+  }, [fetchStats]);
+
+  useEffect(() => {
     fetchStats();
   }, [fetchStats]);
 
   return (
-    <StatsContext.Provider value={{ 
-      stats, 
-      loading, 
-      error, 
-      fetchStats, 
-      refreshStats 
+    <StatsContext.Provider value={{
+      stats,
+      loading,
+      error,
+      fetchStats,
+      refreshStats
     }}>
       {children}
     </StatsContext.Provider>
