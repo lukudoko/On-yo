@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { getGroupStats } from '@/utils/stats/group';
 import { findIntelligentNextGroup } from '@/utils/recommendation';
 import { getUserJlptLevel, getUserJlptProgress } from '@/utils/jlpt';
-import { getKanjiThisWeek } from '@/utils/stats/weekly'; 
+import { getKanjiThisWeek, getKanjiToday } from '@/utils/stats/weekly';
 import { getGoalProgress } from '@/utils/progress';
 
 export async function getDashboardData(userId) {
@@ -14,11 +14,13 @@ export async function getDashboardData(userId) {
   try {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { track: true, streak: true, goalLevel: true }
+      select: { track: true, streak: true, goalLevel: true, studyDates: true }
     });
 
     const userTrack = user?.track || 'stat';
     const userGoalLevel = user?.goalLevel;
+    const studyDates = user?.studyDates || [];
+
 
     const [
       totalGroups,
@@ -26,20 +28,22 @@ export async function getDashboardData(userId) {
       groupStats,
       jlptLevel,
       jlptProgress,
-      kanjiThisWeek
+      kanjiThisWeek,
+      kanjiToday,
     ] = await Promise.all([
       prisma.onyomiGroup.count(),
       findIntelligentNextGroup(userId, userTrack),
       getGroupStats(userId),
       getUserJlptLevel(userId),
       userTrack === 'jlpt' ? getUserJlptProgress(userId) : Promise.resolve(null),
-      getKanjiThisWeek(userId)
+      getKanjiThisWeek(userId),
+      getKanjiToday(userId),
     ]);
 
     const progress = await getGoalProgress(userId, userTrack, userGoalLevel);
 
     let trackSpecificStats = {};
-    
+
     if (userTrack === 'jlpt') {
       trackSpecificStats = jlptProgress;
     } else {
@@ -57,7 +61,9 @@ export async function getDashboardData(userId) {
       jlptLevel,
       trackSpecificStats,
       streak: user?.streak || 0,
-      kanjiThisWeek 
+      kanjiThisWeek,
+      studyDates: studyDates,
+      kanjiToday,
     };
   } catch (error) {
     console.error("Error in getDashboardData utility:", error);

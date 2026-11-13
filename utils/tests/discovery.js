@@ -1,89 +1,95 @@
 import { prisma } from '@/lib/prisma';
 
 export async function getDiscoveryKanji(userId, track, jlptLevel, limit) {
-
-  let kanjiWhere = {
-    progress: {
-      every: {
-        userId: userId,
-        masteryLevel: 0
-      }
-    }
-  };
-
-  if (track === 'jlpt') {
-    kanjiWhere.jlpt_new = jlptLevel;
-  }
-
   const unlearnedKanji = await prisma.kanji.findMany({
-    where: kanjiWhere,
+    where: {
+      ...(track === 'jlpt' ? { jlpt_new: jlptLevel } : {}),
+      progress: {
+        none: {
+          userId: userId,
+          masteryLevel: { gt: 0 }
+        }
+      }
+    },
     select: {
       id: true,
       character: true,
       primary_onyomi: true,
-      jlpt_new: true
-    }
+      jlpt_new: true,
+    },
   });
 
   if (unlearnedKanji.length === 0) return [];
 
+  const existingProgress = await prisma.userProgress.findMany({
+    where: {
+      userId,
+      kanjiId: { in: unlearnedKanji.map(k => k.id) },
+    },
+    select: { kanjiId: true },
+  });
+  const existingIds = new Set(existingProgress.map(p => p.kanjiId));
+  const newRecords = unlearnedKanji
+    .filter(k => !existingIds.has(k.id))
+    .map(k => ({
+      userId,
+      kanjiId: k.id,
+      masteryLevel: 0,
+      testStreak: 0,
+    }));
 
-  for (const kanji of unlearnedKanji) {
-    await prisma.userProgress.upsert({
-      where: { userId_kanjiId: { userId, kanjiId: kanji.id } },
-      update: {}, // do nothing if exists
-      create: { userId, kanjiId: kanji.id, masteryLevel: 0, testStreak: 0 }
+  if (newRecords.length > 0) {
+    await prisma.userProgress.createMany({
+      data: newRecords,
+      skipDuplicates: true,
     });
   }
 
-  const onyomiGroups = {};
-  unlearnedKanji.forEach(k => {
-    if (!onyomiGroups[k.primary_onyomi]) {
-      onyomiGroups[k.primary_onyomi] = [];
-    }
-    onyomiGroups[k.primary_onyomi].push(k);
-  });
-
   const allGroups = await prisma.onyomiGroup.findMany({
-    select: { reading: true, usefulness_score: true }
+    select: { reading: true, usefulness_score: true },
   });
   const usefulnessMap = {};
   allGroups.forEach(g => {
     usefulnessMap[g.reading] = g.usefulness_score;
   });
 
-  const testableKanji = [];
-
-  for (const [onyomi, kanjiList] of Object.entries(onyomiGroups)) {
-    const knownInGroup = await prisma.userProgress.findMany({
+  const onyomiReadings = [...new Set(unlearnedKanji.map(k => k.primary_onyomi).filter(Boolean))];
+  const knownPeersByOnyomi = {};
+  if (onyomiReadings.length > 0) {
+    const knownProgress = await prisma.userProgress.findMany({
       where: {
-        userId: userId,
+        userId,
         masteryLevel: { gte: 1 },
-        kanji: { primary_onyomi: onyomi }
+        kanji: { primary_onyomi: { in: onyomiReadings } },
       },
-      include: {
-        kanji: { select: { character: true } }
-      }
+      select: {
+        kanji: { select: { character: true, primary_onyomi: true } },
+      },
     });
 
-    if (knownInGroup.length === 0) continue;
+    knownProgress.forEach(({ kanji }) => {
+      const onyomi = kanji.primary_onyomi;
+      if (!knownPeersByOnyomi[onyomi]) knownPeersByOnyomi[onyomi] = [];
+      knownPeersByOnyomi[onyomi].push(kanji.character);
+    });
+  }
 
-    const knownCharacters = knownInGroup.map(p => p.kanji.character);
-    const usefulness = usefulnessMap[onyomi] || 0;
+  const testableKanji = [];
+  for (const kanji of unlearnedKanji) {
+    const onyomi = kanji.primary_onyomi;
+    const knownPeers = knownPeersByOnyomi[onyomi];
+    if (!knownPeers || knownPeers.length === 0) continue;
 
-    kanjiList.forEach(kanji => {
-      testableKanji.push({
-        id: kanji.id,
-        character: kanji.character,
-        onyomi: onyomi,
-        knownPeers: knownCharacters,
-        usefulnessScore: usefulness,
-        jlpt: kanji.jlpt_new
-      });
+    testableKanji.push({
+      id: kanji.id,
+      character: kanji.character,
+      onyomi,
+      knownPeers,
+      usefulnessScore: usefulnessMap[onyomi] || 0,
+      jlpt: kanji.jlpt_new,
     });
   }
 
   testableKanji.sort((a, b) => b.usefulnessScore - a.usefulnessScore);
-
   return testableKanji.slice(0, limit);
 }

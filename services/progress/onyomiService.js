@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 
-export async function getOnyomiGroupProgress(onyomi, jlptFilter = null) {
+export async function getOnyomiGroupKanji(onyomi, jlptFilter = null) {
   const whereClause = {
     primary_onyomi: onyomi
   };

@@ -36,9 +36,10 @@ model User {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   track         String         @default("stat")
-  lastStudyDate DateTime?      // Add this - when we last recorded their study streak
+  lastStudyDate String?        // <-- Must be String, not DateTime
+  studyDates    String[]       @default([])
   goalLevel     String         @default("N5")
-  streak        Int            @default(0)  // Add this - their current streak count
+  streak        Int            @default(0)
   progress      UserProgress[]
   Session       Session[]
 }

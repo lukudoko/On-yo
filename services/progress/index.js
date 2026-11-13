@@ -118,49 +118,6 @@ export class ProgressService {
     }
   }
 
-  static async getOnyomiGroupProgress(userId, onyomiReading) {
-    const defaultResult = { mastered: 0, learning: 0, unlearned: 0, total: 0 };
-
-    if (!userId) return defaultResult;
-
-    try {
-
-      const results = await prisma.kanji.findMany({
-        where: { primary_onyomi: onyomiReading },
-        select: {
-          id: true,
-          progress: {
-            where: { userId: userId },
-            select: { masteryLevel: true }
-          }
-        }
-      });
-
-      if (results.length === 0) return defaultResult;
-
-      let mastered = 0;
-      let learning = 0;
-      let unlearned = 0;
-
-      results.forEach(kanji => {
-        const masteryLevel = kanji.progress[0]?.masteryLevel || 0;
-        if (masteryLevel === 2) mastered++;
-        else if (masteryLevel === 1) learning++;
-        else unlearned++;
-      });
-
-      return {
-        mastered,
-        learning,
-        unlearned,
-        total: results.length
-      };
-    } catch (error) {
-      console.error('Error getting onyomi group progress:', error);
-      return defaultResult;
-    }
-  }
-
   static async getOverallProgress(userId) {
     try {
       const totalKanji = await prisma.kanji.count();

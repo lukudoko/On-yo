@@ -123,6 +123,8 @@ export async function findIntelligentNextGroup(userId, userTrack = 'stat') {
           usefulness_score: group.usefulness_score,
           priority_score: priorityScore,
           completion: normalizedScore,
+          learningCount: progress.learning,
+          unlearnedCount: totalKanji - progress.mastered - progress.learning,
           ...(userTrack === 'jlpt' && { jlpt_level: targetJlptLevel })
         });
       }
@@ -131,18 +133,14 @@ export async function findIntelligentNextGroup(userId, userTrack = 'stat') {
     groupRecommendations.sort((a, b) => b.priority_score - a.priority_score);
 
     if (userTrack === 'jlpt') {
-      //console.log("All JLPT track groups sorted by priority:");
       groupRecommendations.forEach((group, index) => {
-     //   console.log(`${index + 1}. ${group.reading}: Priority ${group.priority_score.toFixed(2)}, Completion ${group.completion.toFixed(2)}%`);
       });
     }
 
     const bestGroup = groupRecommendations[0] || null;
 
     if (bestGroup) {
-     // console.log('Recommended group:', bestGroup);
     } else {
-      //console.log('No suitable group found for recommendation');
     }
 
     return bestGroup;

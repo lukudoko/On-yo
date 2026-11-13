@@ -1,54 +1,70 @@
 import { prisma } from '@/lib/prisma';
-import { format, subDays } from 'date-fns';
 
-export async function updateStreak(userId) {
+export async function updateStreak(userId, clientLocalDate) {
   if (!userId) return 0;
 
-  const latestStudy = await prisma.userProgress.findFirst({
-    where: { userId },
-    orderBy: { lastStudied: 'desc' },
-    select: { lastStudied: true }
-  });
-
-  if (!latestStudy) return 0;
+  const today = clientLocalDate || new Date().toISOString().split('T')[0];
+  
+  const [year, month, day] = today.split('-').map(Number);
+  const todayDate = new Date(year, month - 1, day);
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { streak: true, lastStudyDate: true }
+    select: { streak: true, lastStudyDate: true, studyDates: true }
   });
 
-  const today = format(new Date(), 'yyyy-MM-dd');
-  const lastStudyDate = format(new Date(latestStudy.lastStudied), 'yyyy-MM-dd');
+  if (!user) return 0;
 
-  let newStreak = 1; 
-
-  if (user?.lastStudyDate) {
-    const lastRecordedDate = format(new Date(user.lastStudyDate), 'yyyy-MM-dd');
-
-    if (lastRecordedDate === today) {
-      newStreak = user.streak;
-    } else {
-
-      const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
-
-      if (lastRecordedDate === yesterday) {
-
-        newStreak = user.streak + 1;
-      }
-
-    }
-  } else {
-
+  let newStreak = user.streak ?? 0;
+  let needsUpdate = false;
+  
+  if (!user.lastStudyDate) {
     newStreak = 1;
+    needsUpdate = true;
+  } else {
+    if (user.lastStudyDate === today) {
+      return user.streak; 
+    } else {
+      const yesterdayDate = new Date(year, month - 1, day - 1);
+      const yesterdayStr = `${yesterdayDate.getFullYear()}-${String(yesterdayDate.getMonth() + 1).padStart(2, '0')}-${String(yesterdayDate.getDate()).padStart(2, '0')}`;
+
+      if (user.lastStudyDate === yesterdayStr) {
+        newStreak = (user.streak ?? 0) + 1;
+        needsUpdate = true;
+      } else {
+        newStreak = 1;
+        needsUpdate = true;
+      }
+    }
   }
 
-  await prisma.user.update({
-    where: { id: userId },
-     data:{
-      streak: newStreak,
-      lastStudyDate: new Date() 
+  let updatedDates = user.studyDates || [];
+  
+  const isMonday = todayDate.getDay() === 1;
+
+  if (isMonday && !updatedDates.includes(today)) {
+    updatedDates = [];
+  }
+
+  if (!updatedDates.includes(today)) {
+    updatedDates.push(today);
+    needsUpdate = true; 
+    
+    if (updatedDates.length > 7) {
+      updatedDates = updatedDates.slice(-7); 
     }
-  });
+  }
+
+  if (needsUpdate) {
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        streak: newStreak,
+        lastStudyDate: today,
+        studyDates: updatedDates,
+      }
+    });
+  }
 
   return newStreak;
 }
