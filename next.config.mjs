@@ -9,14 +9,7 @@ const nextConfig = {
       },
     ],
   },
-  // TEMPORARY: unminified build so the error shows the real name instead of "d"
-  experimental: {
-    serverMinification: false,
-  },
-  webpack: (config) => {
-    config.optimization.minimize = false;
-    return config;
-  },
 };
+
 
 export default nextConfig;
