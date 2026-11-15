@@ -1,12 +1,12 @@
 import { getSession } from "@/lib/auth"
 import { getDashboardData } from "@/utils/dashboard"
 import DashboardContent from "./DashboardContent"
-import { revalidateDashboard } from "./actions/dash"
+import { revalidateDashboard } from "../actions/dash"
+
+export const dynamic = 'force-dynamic' 
 
 export default async function DashboardPage() {
   const session = await getSession()
-  if (!session) return <div>Please sign in</div>
-
   const userId = session.user.id
   const dashboardData = await getDashboardData(userId)
 

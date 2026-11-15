@@ -77,9 +77,16 @@ function VocabPrompt({ item, selectedAnswer }) {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="text-base px-6 text-center font-semibold"
+        className="text-base px-6 text-center font-semibold flex flex-wrap justify-center gap-y-1"
       >
-        {formatMeaning(item.meaning)}
+        {formatMeaning(item.meaning).map((m, i, arr) => (
+          <span key={i} className="text-gray-800 leading-relaxed">
+            {m}
+            {i < arr.length - 1 && (
+              <span className="text-gray-400 mx-1.5 font-normal">/</span>
+            )}
+          </span>
+        ))}
       </motion.div>
     </motion.div>
   );
@@ -108,10 +115,16 @@ export default function VocabClient() {
     : 0;
 
   useEffect(() => {
-    if (currentItem?.testType === "write-in" && !showResult) {
+    if (currentKanji?.testType === "write-in" && !showResult) {
       inputRef.current?.focus();
+      setTimeout(() => {
+        inputRef.current?.scrollIntoView({ 
+          behavior: "smooth", 
+          block: "center" 
+        });
+      }, 100);
     }
-  }, [currentQuestion, showResult, currentItem]);
+  }, [currentQuestion, showResult, currentKanji]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -158,7 +171,7 @@ export default function VocabClient() {
         ? userAnswer.toLowerCase() === currentItem.correctAnswer.toLowerCase()
         : userAnswer === currentItem.correctAnswer;
 
-            const fullWord = currentItem.word ||
+    const fullWord = currentItem.word ||
       (currentItem.blankedWord
         ? currentItem.blankedWord.replace(/_/g, currentItem.correctAnswer)
         : null) ||
@@ -347,7 +360,7 @@ function DifficultySelector({ isLoading, onSelect }) {
         <h2 className="text-2xl font-bold text-gray-800 mb-6">
           Choose Vocab Test Difficulty
         </h2>
-        <div className="grid grid-cols-3 gap-4 max-w-md mx-auto mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 gap-4 max-w-md mx-auto mb-8">
           {[10, 20, 30].map((num) => (
             <Button
               key={num}

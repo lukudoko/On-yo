@@ -12,7 +12,7 @@ import { changeTrack } from "@/app/actions/preferences";
 import DeleteAccountModal from "@/components/deletemodal.header";
 import ProfileDrawer from "@/components/profiledrawer.header";
 
-export default function Header({ initialStats }) {
+export default function Header() { 
   const { data: session, status } = useSession();
   const [isOpen, setIsOpen] = useState(false);
   const [changingTrack, setChangingTrack] = useState(false);
@@ -74,7 +74,6 @@ export default function Header({ initialStats }) {
               isOpen={isOpen}
               onOpenChange={setIsOpen}
               session={session}
-              initialStats={initialStats}
               changingTrack={changingTrack}
               onChangeTrack={handleChangeTrack}
               theme={theme}

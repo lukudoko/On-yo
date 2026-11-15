@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { SegmentedProgressBar } from '@/components/progressDisplays';
+import * as wanakana from 'wanakana';
 
 export default function OnyomiGroupCard({
   onyomi,
@@ -29,7 +30,7 @@ export default function OnyomiGroupCard({
         )}
 
         <div className="flex flex-1 flex-col items-center justify-center">
-          <span className="font-jp-round text-[2rem] md:text-5xl  text-center font-black mb-2">{onyomi}</span>
+          <span className="font-jp-round text-[2rem] md:text-5xl  text-center font-black mb-2">{wanakana.toKatakana(onyomi)}</span>
         </div>
 
         <div className="w-full">

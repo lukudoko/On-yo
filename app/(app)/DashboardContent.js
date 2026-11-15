@@ -1,11 +1,18 @@
 "use client"
 
+import { useEffect } from "react"
+import { useRouter } from "next/navigation" 
 import { motion } from "framer-motion"
 import HeroCard from "@/components/dash/hero"
 import TestsCard from "@/components/dash/tests"
 import StatsCard from "@/components/dash/stats"
 
 export default function DashboardContent({ data, userEmail, onTrackChanged }) {
+  const router = useRouter()
+  useEffect(() => {
+    router.refresh()
+  }, [router])
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -23,7 +30,8 @@ export default function DashboardContent({ data, userEmail, onTrackChanged }) {
     },
   }
 
-  const motionKey = JSON.stringify(data)
+const motionKey = data.track 
+
 
   return (
     <div className="py-6 max-w-5xl mx-auto">

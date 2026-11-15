@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Drawer, Chip, DrawerContent, DrawerHeader, DrawerBody, Button, DrawerFooter, useDisclosure } from '@heroui/react';
 import { HiBookOpen, HiMiniCheckCircle, HiMiniQuestionMarkCircle } from "react-icons/hi2";
 import { useMediaQuery } from "@/hooks/mediaquery";
-
+import * as wanakana from 'wanakana';
 
 const KanjiCard = ({
   kanji,
@@ -159,7 +159,7 @@ const KanjiCard = ({
                             key={i}
                             className="font-jp-round text-base text-gray-800 bg-white px-2.5 py-1 rounded-md"
                           >
-                            {r}
+                            {wanakana.toKatakana(r)}
                           </span>
                         ))}
                       </div>

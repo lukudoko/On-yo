@@ -4,7 +4,7 @@ import { Progress } from "@heroui/react";
 
 export default function TestCard({ current, total, progress, children }) {
   return (
-    <div className="py-6 max-w-2xl mx-auto">
+    <div className="my-6 max-w-2xl mx-auto px-4"> 
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}

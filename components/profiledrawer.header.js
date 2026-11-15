@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { signOut } from "next-auth/react";
 import StreakHeader from "@/components/streaks.header";
+import { useStats } from "@/utils/stats.provider";
 import { getFreshDashboardData } from "@/app/actions/dash"; 
 
 import {
@@ -30,7 +31,6 @@ export default function ProfileDrawer({
   isOpen,
   onOpenChange,
   session,
-  initialStats,
   changingTrack,
   onChangeTrack,
   theme,
@@ -39,20 +39,16 @@ export default function ProfileDrawer({
   dsize,
   isTabletOrDesktop,
 }) {
-  const [stats, setStats] = useState(initialStats);
-
+  const { stats, updateStats } = useStats();
   useEffect(() => {
     if (isOpen && session?.user?.id) {
       getFreshDashboardData(session.user.id).then(data => {
         if (data) {
-          setStats(data);
+          updateStats(data);
         }
       });
     }
-  }, [isOpen, session?.user?.id]);
-
-
-  console.log(stats);
+  }, [isOpen, session?.user?.id, updateStats]);
 
   return (
     <Drawer
@@ -173,8 +169,7 @@ export default function ProfileDrawer({
                     </Button>
 
                     <Button
-                      onPress={() => {
-                      }}
+                      onPress={() => {}}
                       isDisabled
                       className="w-full h-auto min-h-0 px-4 py-4 justify-between bg-[#6A7FDB20]"
                     >

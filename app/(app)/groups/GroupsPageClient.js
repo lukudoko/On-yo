@@ -33,6 +33,9 @@ export default function GroupsPageClient({
   const observerRef = useRef(null);
   const prevLevelRef = useRef(jlptLevel);
 
+
+  console.log(initialGroups);
+
   const hasMore = groups.length < allGroupsLength;
 
   const percentage = totalStats.totalKanji

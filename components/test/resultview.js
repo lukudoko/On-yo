@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Button } from "@heroui/react";
 
 export default function ResultView({
-  reading,           // the full correct reading to display at the top
+  reading,           
   isCorrect,
   shake,
   userAnswer,

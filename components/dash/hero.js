@@ -1,11 +1,10 @@
 import { motion } from 'framer-motion';
 import { Link, Button } from '@heroui/react';
 import { HiMiniCheckCircle, HiMiniBookOpen, HiMiniQuestionMarkCircle } from "react-icons/hi2";
+import * as wanakana from 'wanakana';
 
 export default function HeroCard({ itemVariants, data }) {
   const { nextGroup, track, jlptLevel } = data;
-
-  console.log(nextGroup);
 
   return (
     <>
@@ -14,7 +13,7 @@ export default function HeroCard({ itemVariants, data }) {
         className="flex gap-4 bg-white/90 rounded-3xl flex-col p-6  items-center "
       >
         <p className="text-[5.1rem] py-2 font-bold  font-jp-round ">
-          {nextGroup.reading}
+          {wanakana.toKatakana(nextGroup.reading)}
         </p>
         <div className="flex gap-2">
           <div className="flex bg-[#26A68210] rounded-xl justify-center gap-x-1 items-center p-2">

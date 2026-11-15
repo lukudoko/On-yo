@@ -30,6 +30,12 @@ export default function ReviewClient({ testData: initialTestData }) {
   useEffect(() => {
     if (currentKanji?.testType === "write-in" && !showResult) {
       inputRef.current?.focus();
+      setTimeout(() => {
+        inputRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "center"
+        });
+      }, 100);
     }
   }, [currentQuestion, showResult, currentKanji]);
 

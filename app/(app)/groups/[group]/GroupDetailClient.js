@@ -6,6 +6,7 @@ import KanjiCard from "@/components/card";
 import { Chip } from "@heroui/react";
 import { HiBookOpen, HiMiniCheckCircle } from "react-icons/hi2";
 import { updateMastery } from "@/app/actions/kanji";
+import * as wanakana from 'wanakana';
 
 const cardVariants = {
   hidden: { opacity: 0 },
@@ -57,7 +58,7 @@ export default function GroupDetailClient({
       <div className="py-6 space-y-6">
       <div className="flex items-center justify-between">
         <span className="text-4xl md:text-5xl font-jp-round font-black leading-none">
-          {onyomi}
+          {wanakana.toKatakana(onyomi)}
         </span>
       </div>
 

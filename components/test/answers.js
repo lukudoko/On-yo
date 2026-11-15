@@ -1,6 +1,7 @@
 "use client";
 import { motion } from "framer-motion";
 import { Button, Input, Popover, PopoverTrigger, PopoverContent } from "@heroui/react";
+import * as wanakana from "wanakana";
 
 export default function AnswerForm({
   type,
@@ -23,6 +24,11 @@ export default function AnswerForm({
     ? { x: [0, -8, 8, -4, 4, 0] }
     : {};
 
+  const handleInputChange = (value) => {
+    const hiraganaValue = wanakana.toHiragana(value);
+    onSelect(hiraganaValue);
+  };
+
   return (
     <motion.form
       onSubmit={onSubmit}
@@ -41,8 +47,8 @@ export default function AnswerForm({
               size="lg"
               aria-pressed={selectedAnswer === option}
               className={`w-full font-bold text-xl transition-colors ${selectedAnswer === option
-                  ? "bg-[#6A7FDB] text-white"
-                  : "bg-[#6A7FDB20] text-black"
+                ? "bg-[#6A7FDB] text-white"
+                : "bg-[#6A7FDB20] text-black"
                 }`}
             >
               {option}
@@ -57,7 +63,11 @@ export default function AnswerForm({
               ref={inputRef}
               type="text"
               value={selectedAnswer}
-              onValueChange={onSelect}
+              onValueChange={handleInputChange}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck="false"
               size="lg"
               {...inputProps}
               classNames={{
