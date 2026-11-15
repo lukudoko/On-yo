@@ -115,7 +115,7 @@ export default function VocabClient() {
     : 0;
 
   useEffect(() => {
-    if (currentKanji?.testType === "write-in" && !showResult) {
+    if (currentItem?.testType === "write-in" && !showResult) {
       inputRef.current?.focus();
       setTimeout(() => {
         inputRef.current?.scrollIntoView({ 
@@ -124,7 +124,7 @@ export default function VocabClient() {
         });
       }, 100);
     }
-  }, [currentQuestion, showResult, currentKanji]);
+  }, [currentQuestion, showResult, currentItem]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -311,7 +311,6 @@ export default function VocabClient() {
       progress={progress}
     >
       <TestQuestion questionIndex={currentQuestion}>
-        { }
         <VocabPrompt item={currentItem} selectedAnswer={selectedAnswer} />
 
         {!showResult ? (

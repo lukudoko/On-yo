@@ -46,7 +46,9 @@ export default function ReviewClient({ testData: initialTestData }) {
   const shuffledMeanings = useMemo(() => {
     const meanings = currentKanji?.kanji?.meanings;
     if (!meanings?.length) return null;
-    return pickRandom(meanings, 3).join(", ");
+    return pickRandom(meanings, 3).map(m =>
+      m.trim().replace(/^\w/, (c) => c.toUpperCase())
+    );
   }, [currentQuestion]);
 
   const handleSubmit = async (e) => {
@@ -139,9 +141,20 @@ export default function ReviewClient({ testData: initialTestData }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.1 }}
-          className="px-6 text-center font-semibold min-h-[2rem]"
+          className="px-6 text-center font-semibold min-h-[2rem] flex flex-wrap justify-center gap-y-1"
         >
-          {shuffledMeanings ?? "—"}
+          {shuffledMeanings ? (
+            shuffledMeanings.map((m, i, arr) => (
+              <span key={i} className="text-gray-800 leading-relaxed">
+                {m}
+                {i < arr.length - 1 && (
+                  <span className="text-gray-400 mx-1.5 font-normal">/</span>
+                )}
+              </span>
+            ))
+          ) : (
+            <span className="text-gray-400">—</span>
+          )}
         </motion.div>
 
         {!showResult ? (

@@ -25,7 +25,12 @@ export default function AnswerForm({
     : {};
 
   const handleInputChange = (value) => {
-    const hiraganaValue = wanakana.toHiragana(value);
+    let processedValue = value;
+    if (/[a-zA-Z]/.test(value)) {
+      processedValue = value.replace(/ん(?=[aiueoyn])/gi, "n");
+    }
+
+    const hiraganaValue = wanakana.toHiragana(processedValue);
     onSelect(hiraganaValue);
   };
 
