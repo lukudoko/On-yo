@@ -2,10 +2,11 @@ import { prisma } from '@/lib/prisma';
 
 export class ProgressService {
 
-  static async updateKanjiMastery(userId, kanjiCharacter, masteryLevel) {
+  static async updateKanjiMastery(userId, kanjiCharacter, masteryLevel, testType = 'kanji') {
     if (!userId) return null;
 
     try {
+      const timestampField = testType === 'vocab' ? 'lastStudiedVocab' : 'lastStudiedKanji';
 
       const result = await prisma.$transaction(async (tx) => {
         const kanji = await tx.kanji.findUnique({
@@ -26,13 +27,13 @@ export class ProgressService {
           },
           update: {
             masteryLevel: masteryLevel,
-            lastStudied: new Date()
+            [timestampField]: new Date()
           },
           create: {
             userId: userId,
             kanjiId: kanji.id,
             masteryLevel: masteryLevel,
-            lastStudied: new Date()
+            [timestampField]: new Date()
           }
         });
       });
@@ -50,7 +51,6 @@ export class ProgressService {
     }
 
     try {
-
       const results = await prisma.kanji.findMany({
         where: {
           character: { in: kanjiCharacters }
@@ -85,7 +85,6 @@ export class ProgressService {
     if (!userId) return new Map();
 
     try {
-
       const results = await prisma.userProgress.findMany({
         where: { userId: userId },
         select: {
@@ -136,7 +135,6 @@ export class ProgressService {
         mastered: 0,
         learning: 0,
         unlearned: 0,
-
         total: totalKanji
       };
 
@@ -146,7 +144,6 @@ export class ProgressService {
         if (stat.masteryLevel === 2) stats.mastered = count;
         else if (stat.masteryLevel === 1) stats.learning = count;
         else if (stat.masteryLevel === 0) stats.unlearned = count;
-
       });
 
       const totalWithProgress = stats.mastered + stats.learning + stats.unlearned;

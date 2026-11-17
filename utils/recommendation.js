@@ -1,18 +1,18 @@
 import { prisma } from '@/lib/prisma';
 import { getUserJlptLevel } from '@/utils/jlpt';
 
+const USEFULNESS_WEIGHT = 0.001;
+
 function calculateNormalizedScore(progress, totalKanji) {
   const totalPoints = (progress.mastered * 2) + (progress.learning * 1);
   const maxPossiblePoints = totalKanji * 2;
-
   return maxPossiblePoints > 0 ? (totalPoints / maxPossiblePoints) * 100 : 0;
 }
 
-function calculatePriorityScore(normalizedScore, usefulnessScore) {
+function calculatePriorityScore(completion, usefulnessScore) {
+  if (completion >= 100) return 0;
 
-  if (normalizedScore >= 95) return 0;
-
-  return (normalizedScore * 10) + (usefulnessScore * 0.1);
+  return completion + (usefulnessScore * USEFULNESS_WEIGHT);
 }
 
 export async function findIntelligentNextGroup(userId, userTrack = 'stat') {
@@ -22,65 +22,53 @@ export async function findIntelligentNextGroup(userId, userTrack = 'stat') {
   }
 
   try {
-    let allGroups;
     let targetJlptLevel = null;
 
     if (userTrack === 'jlpt') {
-
       targetJlptLevel = await getUserJlptLevel(userId);
-
-      allGroups = await prisma.onyomiGroup.findMany({
-        where: {
-          kanji: {
-            some: {
-              jlpt_new: targetJlptLevel
-            }
-          }
-        },
-        select: {
-          reading: true,
-          usefulness_score: true,
-          _count: {
-            select: {
-              kanji: {
-                where: {
-                  jlpt_new: targetJlptLevel
-                }
-              }
-            }
-          }
-        }
-      });
-    } else {
-
-      allGroups = await prisma.onyomiGroup.findMany({
-        select: {
-          reading: true,
-          usefulness_score: true,
-          _count: {
-            select: {
-              kanji: true
-            }
-          }
-        }
-      });
+      if (!targetJlptLevel) return null;
     }
 
-    const userProgress = await prisma.userProgress.findMany({
-      where: {
-        userId: userId
-      },
+    const groupsQuery = userTrack === 'jlpt'
+      ? prisma.onyomiGroup.findMany({
+          where: {
+            kanji: { some: { jlpt_new: targetJlptLevel } },
+          },
+          select: {
+            reading: true,
+            usefulness_score: true,
+            _count: {
+              select: {
+                kanji: { where: { jlpt_new: targetJlptLevel } },
+              },
+            },
+          },
+        })
+      : prisma.onyomiGroup.findMany({
+          select: {
+            reading: true,
+            usefulness_score: true,
+            _count: { select: { kanji: true } },
+          },
+        });
+
+    const progressQuery = prisma.userProgress.findMany({
+      where: { userId },
       select: {
-        kanjiId: true,
         masteryLevel: true,
         kanji: {
           select: {
             primary_onyomi: true,
-            jlpt_new: true
-          }
-        }
-      }
+            jlpt_new: true,
+          },
+        },
+      },
     });
+
+    const [allGroups, userProgress] = await Promise.all([
+      groupsQuery,
+      progressQuery,
+    ]);
 
     const progressByGroup = new Map();
 
@@ -99,7 +87,7 @@ export async function findIntelligentNextGroup(userId, userTrack = 'stat') {
       }
 
       const stats = progressByGroup.get(group);
-      if (progress.masteryLevel === 2) stats.mastered++;
+      if (progress.masteryLevel >= 2) stats.mastered++;
       else if (progress.masteryLevel === 1) stats.learning++;
     });
 
@@ -111,40 +99,32 @@ export async function findIntelligentNextGroup(userId, userTrack = 'stat') {
 
       const progress = progressByGroup.get(group.reading) || {
         mastered: 0,
-        learning: 0
+        learning: 0,
       };
 
-      const normalizedScore = calculateNormalizedScore(progress, totalKanji);
-      const priorityScore = calculatePriorityScore(normalizedScore, group.usefulness_score);
+      const completion = calculateNormalizedScore(progress, totalKanji);
+      const priorityScore = calculatePriorityScore(completion, group.usefulness_score);
 
       if (priorityScore > 0) {
         groupRecommendations.push({
           reading: group.reading,
           usefulness_score: group.usefulness_score,
           priority_score: priorityScore,
-          completion: normalizedScore,
+          completion,
           learningCount: progress.learning,
-          unlearnedCount: totalKanji - progress.mastered - progress.learning,
-          ...(userTrack === 'jlpt' && { jlpt_level: targetJlptLevel })
+          unlearnedCount: Math.max(0, totalKanji - progress.mastered - progress.learning),
+          ...(userTrack === 'jlpt' && { jlpt_level: targetJlptLevel }),
         });
       }
     }
 
-    groupRecommendations.sort((a, b) => b.priority_score - a.priority_score);
+    groupRecommendations.sort((a, b) =>
+      b.priority_score - a.priority_score ||
+      b.usefulness_score - a.usefulness_score ||
+      a.reading.localeCompare(b.reading)
+    );
 
-    if (userTrack === 'jlpt') {
-      groupRecommendations.forEach((group, index) => {
-      });
-    }
-
-    const bestGroup = groupRecommendations[0] || null;
-
-    if (bestGroup) {
-    } else {
-    }
-
-    return bestGroup;
-
+    return groupRecommendations[0] || null;
   } catch (error) {
     console.error("Error in findIntelligentNextGroup:", error);
     return null;

@@ -29,18 +29,21 @@ export class ProgressUpdateService {
     }
 
     const { newMasteryLevel, newStreak, additionalData = {} } = await strategy(
-      progress, 
-      isCorrect, 
+      progress,
+      isCorrect,
       userId,
       clientLocalDate
     );
+
+    // Update the correct timestamp based on test type
+    const timestampField = testType === 'vocab' ? 'lastStudiedVocab' : 'lastStudiedKanji';
 
     const updated = await prisma.userProgress.update({
       where: { userId_kanjiId: { userId, kanjiId } },
       data: {
         testStreak: newStreak,
         masteryLevel: newMasteryLevel,
-        lastStudied: new Date()
+        [timestampField]: new Date()
       }
     });
 
@@ -48,7 +51,7 @@ export class ProgressUpdateService {
       success: true,
       updatedProgress: {
         ...updated,
-        lastStudied: updated.lastStudied.toISOString()
+        [timestampField]: updated[timestampField].toISOString()
       },
       ...additionalData
     };
@@ -102,7 +105,8 @@ export class ProgressUpdateService {
 
   async vocabStrategy(progress, isCorrect, userId, clientLocalDate) {
     const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
-    const wasTestedRecently = progress.lastStudied > twelveHoursAgo;
+    // Now checks the VOCAB timestamp specifically
+    const wasTestedRecently = progress.lastStudiedVocab && progress.lastStudiedVocab > twelveHoursAgo;
 
     let newStreak = progress.testStreak;
     let newMasteryLevel = progress.masteryLevel;
@@ -129,10 +133,10 @@ export class ProgressUpdateService {
       await updateStreak(userId, clientLocalDate);
     }
 
-    return { 
-      newMasteryLevel, 
-      newStreak, 
-      additionalData: { wasTestedRecently } 
+    return {
+      newMasteryLevel,
+      newStreak,
+      additionalData: { wasTestedRecently }
     };
   }
 }
