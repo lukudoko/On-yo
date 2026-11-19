@@ -1,6 +1,6 @@
 {
   "name": "kanji",
-  "version": "3.0.1",
+  "version": "3.7.5",
   "type": "module",
   "private": true,
   "scripts": {
