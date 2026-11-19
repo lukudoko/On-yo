@@ -10,7 +10,10 @@ async function getDueProgress(userId, cooldownMs, type = 'kanji') {
       userId,
       masteryLevel: { in: [1, 2] },
       testStreak: { lt: 7 },
-      [lastStudiedField]: { lte: cutoff },
+      OR: [
+        { [lastStudiedField]: { lte: cutoff } },
+        { [lastStudiedField]: null }, 
+      ],
     },
     include: { kanji: true },
     orderBy: [{ masteryLevel: 'asc' }, { [lastStudiedField]: 'asc' }],
@@ -95,12 +98,14 @@ export async function handleTestResult(userId, kanjiId, isCorrect, testType = 'k
     newMastery = 1; newStreak = 0;
   }
 
-  const updateData = { testStreak: newStreak, masteryLevel: newMastery };
-  if (testType === 'vocab') {
-    updateData.lastStudiedVocab = new Date();
-  } else {
-    updateData.lastStudiedKanji = new Date();
-  }
+  const now = new Date();
+  const updateData = { 
+    testStreak: newStreak, 
+    masteryLevel: newMastery,
+    // 🌟 THE FIX: Update BOTH timestamps to enforce a global cooldown
+    lastStudiedKanji: now,
+    lastStudiedVocab: now,
+  };
 
   return prisma.userProgress.update({
     where: { userId_kanjiId: { userId, kanjiId } },
@@ -274,4 +279,26 @@ export async function prepareReviewItems(selectedKanji, userId) {
   }
 
   return kanjiWithOptions;
+}
+
+export async function debugTestableCounts(userId) {
+  const kanjiDue = await getDueProgress(userId, REVIEW_COOLDOWN_MS, 'kanji');
+  const vocabDue = await getDueProgress(userId, VOCAB_COOLDOWN_MS, 'vocab');
+  
+  const kanjiIds = kanjiDue.map(p => p.kanjiId);
+  const vocabIds = vocabDue.map(p => p.kanjiId);
+  const overlap = kanjiIds.filter(id => vocabIds.includes(id));
+
+  console.log('=== 🀄 KANJI TEST DEBUG INFO ===');
+  console.log(`Total Kanji Review Due: ${kanjiDue.length}`);
+  console.log(`Total Vocab Review Due: ${vocabDue.length}`);
+  console.log(`Overlap (Due for BOTH): ${overlap.length}`);
+  console.log('===============================');
+
+  return { 
+    kanjiCount: kanjiDue.length, 
+    vocabCount: vocabDue.length, 
+    overlapCount: overlap.length,
+    overlapIds: overlap
+  };
 }
