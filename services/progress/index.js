@@ -2,11 +2,11 @@ import { prisma } from '@/lib/prisma';
 
 export class ProgressService {
 
-  static async updateKanjiMastery(userId, kanjiCharacter, masteryLevel, testType = 'kanji') {
+  static async updateKanjiMastery(userId, kanjiCharacter, masteryLevel) {
     if (!userId) return null;
 
     try {
-      const timestampField = testType === 'vocab' ? 'lastStudiedVocab' : 'lastStudiedKanji';
+      const now = new Date();
 
       const result = await prisma.$transaction(async (tx) => {
         const kanji = await tx.kanji.findUnique({
@@ -27,13 +27,15 @@ export class ProgressService {
           },
           update: {
             masteryLevel: masteryLevel,
-            [timestampField]: new Date()
+            lastStudiedKanji: now,
+            lastStudiedVocab: now
           },
           create: {
             userId: userId,
             kanjiId: kanji.id,
             masteryLevel: masteryLevel,
-            [timestampField]: new Date()
+            lastStudiedKanji: now,
+            lastStudiedVocab: now
           }
         });
       });

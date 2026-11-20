@@ -1,22 +1,26 @@
 import { prisma } from '@/lib/prisma';
-import { REVIEW_COOLDOWN_MS, VOCAB_COOLDOWN_MS } from '@/lib/testOptions';
+import { REVIEW_COOLDOWN_MS, VOCAB_COOLDOWN_MS, DECAY_DAYS } from '@/lib/testOptions';
 
 async function getDueProgress(userId, cooldownMs, type = 'kanji') {
-  const cutoff = new Date(Date.now() - cooldownMs);
-  const lastStudiedField = type === 'vocab' ? 'lastStudiedVocab' : 'lastStudiedKanji';
+  const now = Date.now();
+  const cutoff = new Date(now - cooldownMs);
+  const staleCutoff = new Date(now - DECAY_DAYS * 86_400_000);
+  const field = type === 'vocab' ? 'lastStudiedVocab' : 'lastStudiedKanji';
 
   return prisma.userProgress.findMany({
     where: {
       userId,
       masteryLevel: { in: [1, 2] },
-      testStreak: { lt: 7 },
-      OR: [
-        { [lastStudiedField]: { lte: cutoff } },
-        { [lastStudiedField]: null }, 
+      AND: [
+        { OR: [{ [field]: { lte: cutoff } }, { [field]: null }] },
+        { OR: [
+          { testStreak: { lt: 7 } },
+          { testStreak: { gte: 7 }, [field]: { lte: staleCutoff } },
+        ] },
       ],
     },
     include: { kanji: true },
-    orderBy: [{ masteryLevel: 'asc' }, { [lastStudiedField]: 'asc' }],
+    orderBy: [{ masteryLevel: 'asc' }, { [field]: 'asc' }],
   });
 }
 
@@ -64,53 +68,6 @@ export async function getTestableKanjiForVocab(userId, limit = 30) {
   if (allTestable.length === 0) return [];
   if (allTestable.length <= limit) return allTestable;
   return selectKanjiWithRatio(allTestable, limit);
-}
-
-export async function handleTestResult(userId, kanjiId, isCorrect, testType = 'kanji') {
-  const progress = await prisma.userProgress.findUnique({
-    where: { userId_kanjiId: { userId, kanjiId } },
-  });
-
-  if (!progress) throw new Error('Progress not found');
-
-  const lastStudiedDate = testType === 'vocab' ? progress.lastStudiedVocab : progress.lastStudiedKanji;
-  const daysSinceLastStudy = lastStudiedDate 
-    ? (Date.now() - lastStudiedDate.getTime()) / (1000 * 60 * 60 * 24) 
-    : 999;
-
-  let baseStreak = progress.testStreak;
-
-  if (daysSinceLastStudy > 30 && progress.testStreak > 0) {
-    const decay = Math.min(progress.testStreak, Math.floor(daysSinceLastStudy / 30));
-    baseStreak = Math.max(0, progress.testStreak - decay);
-  }
-
-  let newStreak = isCorrect ? Math.min(7, baseStreak + 1) : Math.max(-3, baseStreak - 1);
-  let newMastery = progress.masteryLevel;
-
-  if (progress.masteryLevel === 1 && newStreak >= 7) {
-    newMastery = 2; newStreak = 0;
-  } else if (progress.masteryLevel === 1 && newStreak <= -3) {
-    newMastery = 0; newStreak = 0;
-  } else if (progress.masteryLevel === 2 && newStreak >= 7) {
-    newMastery = 2; newStreak = 7;
-  } else if (progress.masteryLevel === 2 && newStreak <= -3) {
-    newMastery = 1; newStreak = 0;
-  }
-
-  const now = new Date();
-  const updateData = { 
-    testStreak: newStreak, 
-    masteryLevel: newMastery,
-    // 🌟 THE FIX: Update BOTH timestamps to enforce a global cooldown
-    lastStudiedKanji: now,
-    lastStudiedVocab: now,
-  };
-
-  return prisma.userProgress.update({
-    where: { userId_kanjiId: { userId, kanjiId } },
-    data: updateData,
-  });
 }
 
 export async function getVocabTestItems(userId, limit = 30) {
@@ -184,7 +141,7 @@ export async function getVocabTestItems(userId, limit = 30) {
 
     if (!itemCreated) {
       const blankedWord = wordStr.substring(0, kanjiIndex) + '_' + wordStr.substring(kanjiIndex + 1);
-      
+
       const levelWrongKanji = wrongKanjiByLevel.get(progress.kanji.jlpt_new) || [];
       const wrongOptions = levelWrongKanji
         .filter(char => char !== kanjiChar)
@@ -212,14 +169,14 @@ export async function prepareReviewItems(selectedKanji, userId) {
 
   const learningKanji = selectedKanji.filter(p => p.masteryLevel === 1);
   const primaryOnyomis = learningKanji.map(p => p.kanji.primary_onyomi);
-  
+
   let groupKanjiMap = new Map();
   if (primaryOnyomis.length > 0) {
     const groupKanji = await prisma.kanji.findMany({
       where: { primary_onyomi: { in: primaryOnyomis } },
       include: { progress: { where: { userId, masteryLevel: 2 } } }
     });
-    
+
     groupKanji.forEach(k => {
       if (!groupKanjiMap.has(k.primary_onyomi)) groupKanjiMap.set(k.primary_onyomi, []);
       if (k.progress.length > 0) {
@@ -279,26 +236,4 @@ export async function prepareReviewItems(selectedKanji, userId) {
   }
 
   return kanjiWithOptions;
-}
-
-export async function debugTestableCounts(userId) {
-  const kanjiDue = await getDueProgress(userId, REVIEW_COOLDOWN_MS, 'kanji');
-  const vocabDue = await getDueProgress(userId, VOCAB_COOLDOWN_MS, 'vocab');
-  
-  const kanjiIds = kanjiDue.map(p => p.kanjiId);
-  const vocabIds = vocabDue.map(p => p.kanjiId);
-  const overlap = kanjiIds.filter(id => vocabIds.includes(id));
-
-  console.log('=== 🀄 KANJI TEST DEBUG INFO ===');
-  console.log(`Total Kanji Review Due: ${kanjiDue.length}`);
-  console.log(`Total Vocab Review Due: ${vocabDue.length}`);
-  console.log(`Overlap (Due for BOTH): ${overlap.length}`);
-  console.log('===============================');
-
-  return { 
-    kanjiCount: kanjiDue.length, 
-    vocabCount: vocabDue.length, 
-    overlapCount: overlap.length,
-    overlapIds: overlap
-  };
 }

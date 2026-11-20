@@ -118,9 +118,9 @@ export default function VocabClient() {
     if (currentItem?.testType === "write-in" && !showResult) {
       inputRef.current?.focus();
       setTimeout(() => {
-        inputRef.current?.scrollIntoView({ 
-          behavior: "smooth", 
-          block: "center" 
+        inputRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "center"
         });
       }, 100);
     }
@@ -202,7 +202,11 @@ export default function VocabClient() {
     if (currentItem.kanjiId) {
       setIsSubmitting(true);
       try {
-        await submitVocabAnswer(currentItem.kanjiId, correct);
+        await submitVocabAnswer(
+          currentItem.kanjiId,
+          correct,
+          new Date().toLocaleDateString('en-CA')
+        );
       } catch (err) {
         console.error("Failed to save vocab answer:", err);
       } finally {

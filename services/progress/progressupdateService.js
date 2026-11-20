@@ -1,12 +1,27 @@
 import { prisma } from '@/lib/prisma';
+import { DECAY_DAYS } from '@/lib/testOptions';
 import { updateStreak } from '@/utils/streak';
+
+function applyAnswer(progress, isCorrect) {
+  let newStreak = isCorrect
+    ? Math.min(7, progress.testStreak + 1)
+    : Math.max(-3, progress.testStreak - 1);
+  let newMasteryLevel = progress.masteryLevel;
+
+  if (progress.masteryLevel === 1 && newStreak >= 7) { newMasteryLevel = 2; newStreak = 0; }
+  else if (progress.masteryLevel === 1 && newStreak <= -3) { newMasteryLevel = 0; newStreak = 0; }
+  else if (progress.masteryLevel === 2 && newStreak >= 7) { newMasteryLevel = 2; newStreak = 7; }
+  else if (progress.masteryLevel === 2 && newStreak <= -3) { newMasteryLevel = 1; newStreak = 0; }
+
+  return { newStreak, newMasteryLevel };
+}
 
 export class ProgressUpdateService {
   constructor() {
     this.strategies = {
       discovery: this.discoveryStrategy.bind(this),
       review: this.reviewStrategy.bind(this),
-      vocab: this.vocabStrategy.bind(this)
+      vocab: this.vocabStrategy.bind(this),
     };
   }
 
@@ -28,32 +43,42 @@ export class ProgressUpdateService {
       throw new Error(`Unknown test type: ${testType}`);
     }
 
+    // ---- decay block goes here, after the strategy lookup ----
+    const lastStudied = [progress.lastStudiedKanji, progress.lastStudiedVocab]
+      .filter(Boolean)
+      .sort((a, b) => b - a)[0];
+    const daysSince = lastStudied ? (Date.now() - lastStudied.getTime()) / 86_400_000 : 0;
+
+    let effectiveProgress = progress;
+    if (daysSince > DECAY_DAYS && progress.testStreak > 0) {
+      const decay = Math.min(progress.testStreak, Math.floor(daysSince / DECAY_DAYS));
+      effectiveProgress = { ...progress, testStreak: progress.testStreak - decay };
+    }
+
     const { newMasteryLevel, newStreak, additionalData = {} } = await strategy(
-      progress,
-      isCorrect,
-      userId,
-      clientLocalDate
+      effectiveProgress, isCorrect, userId, clientLocalDate
     );
 
-    // Update the correct timestamp based on test type
-    const timestampField = testType === 'vocab' ? 'lastStudiedVocab' : 'lastStudiedKanji';
+    const now = new Date();
 
     const updated = await prisma.userProgress.update({
       where: { userId_kanjiId: { userId, kanjiId } },
       data: {
         testStreak: newStreak,
         masteryLevel: newMasteryLevel,
-        [timestampField]: new Date()
-      }
+        lastStudiedKanji: now,
+        lastStudiedVocab: now,
+      },
     });
 
     return {
       success: true,
       updatedProgress: {
         ...updated,
-        [timestampField]: updated[timestampField].toISOString()
+        lastStudiedKanji: updated.lastStudiedKanji.toISOString(),
+        lastStudiedVocab: updated.lastStudiedVocab.toISOString(),
       },
-      ...additionalData
+      ...additionalData,
     };
   }
 
@@ -62,7 +87,7 @@ export class ProgressUpdateService {
       return {
         newMasteryLevel: progress.masteryLevel,
         newStreak: progress.testStreak,
-        additionalData: {}
+        additionalData: {},
       };
     }
 
@@ -78,65 +103,14 @@ export class ProgressUpdateService {
   }
 
   async reviewStrategy(progress, isCorrect, userId, clientLocalDate) {
-    let newStreak = isCorrect
-      ? Math.min(7, progress.testStreak + 1)
-      : Math.max(-3, progress.testStreak - 1);
-
-    let newMasteryLevel = progress.masteryLevel;
-
-    if (progress.masteryLevel === 1 && newStreak >= 7) {
-      newMasteryLevel = 2;
-      newStreak = 0;
-    } else if (progress.masteryLevel === 1 && newStreak <= -3) {
-      newMasteryLevel = 0;
-      newStreak = 0;
-    } else if (progress.masteryLevel === 2 && newStreak >= 7) {
-      newMasteryLevel = 2;
-      newStreak = 7;
-    } else if (progress.masteryLevel === 2 && newStreak <= -3) {
-      newMasteryLevel = 1;
-      newStreak = 0;
-    }
-
+    const { newStreak, newMasteryLevel } = applyAnswer(progress, isCorrect);
     await updateStreak(userId, clientLocalDate);
-
     return { newMasteryLevel, newStreak, additionalData: {} };
   }
 
   async vocabStrategy(progress, isCorrect, userId, clientLocalDate) {
-    const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
-    // Now checks the VOCAB timestamp specifically
-    const wasTestedRecently = progress.lastStudiedVocab && progress.lastStudiedVocab > twelveHoursAgo;
-
-    let newStreak = progress.testStreak;
-    let newMasteryLevel = progress.masteryLevel;
-
-    if (!wasTestedRecently) {
-      newStreak = isCorrect
-        ? Math.min(7, progress.testStreak + 1)
-        : Math.max(-3, progress.testStreak - 1);
-
-      if (progress.masteryLevel === 1 && newStreak >= 7) {
-        newMasteryLevel = 2;
-        newStreak = 0;
-      } else if (progress.masteryLevel === 1 && newStreak <= -3) {
-        newMasteryLevel = 0;
-        newStreak = 0;
-      } else if (progress.masteryLevel === 2 && newStreak >= 7) {
-        newMasteryLevel = 2;
-        newStreak = 7;
-      } else if (progress.masteryLevel === 2 && newStreak <= -3) {
-        newMasteryLevel = 1;
-        newStreak = 0;
-      }
-
-      await updateStreak(userId, clientLocalDate);
-    }
-
-    return {
-      newMasteryLevel,
-      newStreak,
-      additionalData: { wasTestedRecently }
-    };
+    const { newStreak, newMasteryLevel } = applyAnswer(progress, isCorrect);
+    await updateStreak(userId, clientLocalDate);
+    return { newMasteryLevel, newStreak, additionalData: {} };
   }
 }

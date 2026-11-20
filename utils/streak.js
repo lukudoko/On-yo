@@ -3,8 +3,14 @@ import { prisma } from '@/lib/prisma';
 export async function updateStreak(userId, clientLocalDate) {
   if (!userId) return 0;
 
-  const today = clientLocalDate || new Date().toISOString().split('T')[0];
-  
+  const isValidDate = (d) =>
+    /^\d{4}-\d{2}-\d{2}$/.test(d ?? '') &&
+    Math.abs(Date.parse(d) - Date.now()) < 2 * 86_400_000;
+
+  const today = isValidDate(clientLocalDate)
+    ? clientLocalDate
+    : new Date().toISOString().split('T')[0];
+
   const [year, month, day] = today.split('-').map(Number);
   const todayDate = new Date(year, month - 1, day);
 
@@ -17,13 +23,13 @@ export async function updateStreak(userId, clientLocalDate) {
 
   let newStreak = user.streak ?? 0;
   let needsUpdate = false;
-  
+
   if (!user.lastStudyDate) {
     newStreak = 1;
     needsUpdate = true;
   } else {
     if (user.lastStudyDate === today) {
-      return user.streak; 
+      return user.streak;
     } else {
       const yesterdayDate = new Date(year, month - 1, day - 1);
       const yesterdayStr = `${yesterdayDate.getFullYear()}-${String(yesterdayDate.getMonth() + 1).padStart(2, '0')}-${String(yesterdayDate.getDate()).padStart(2, '0')}`;
@@ -39,7 +45,7 @@ export async function updateStreak(userId, clientLocalDate) {
   }
 
   let updatedDates = user.studyDates || [];
-  
+
   const isMonday = todayDate.getDay() === 1;
 
   if (isMonday && !updatedDates.includes(today)) {
@@ -48,10 +54,10 @@ export async function updateStreak(userId, clientLocalDate) {
 
   if (!updatedDates.includes(today)) {
     updatedDates.push(today);
-    needsUpdate = true; 
-    
+    needsUpdate = true;
+
     if (updatedDates.length > 7) {
-      updatedDates = updatedDates.slice(-7); 
+      updatedDates = updatedDates.slice(-7);
     }
   }
 

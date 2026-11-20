@@ -77,7 +77,11 @@ export default function ReviewClient({ testData: initialTestData }) {
     }
     setIsSubmitting(true);
     try {
-      await submitReviewAnswer(currentKanji.kanjiId, correct);
+      await submitReviewAnswer(
+        currentKanji.kanjiId,
+        correct,
+        new Date().toLocaleDateString('en-CA')
+      );
     } catch (err) {
       console.error("Failed to save review answer:", err);
     } finally {
