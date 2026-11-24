@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { startOfWeek, startOfDay } from 'date-fns';
 
-export async function getKanjiThisWeek(userId) {
+export async function getKanji(userId) {
   if (!userId) return 0;
 
   const startOfCurrentWeek = startOfWeek(new Date(), { weekStartsOn: 1 });

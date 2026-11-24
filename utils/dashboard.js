@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { getGroupStats } from '@/utils/stats/group';
 import { findIntelligentNextGroup } from '@/utils/recommendation';
 import { getUserJlptLevel, getUserJlptProgress } from '@/utils/jlpt';
-import { getKanjiThisWeek, getKanjiToday } from '@/utils/stats/weekly';
+import { getKanjiToday } from '@/utils/stats/weekly';
 import { getGoalProgress } from '@/utils/progress';
 
 export async function getDashboardData(userId) {
@@ -28,7 +28,6 @@ export async function getDashboardData(userId) {
       groupStats,
       jlptLevel,
       jlptProgress,
-      kanjiThisWeek,
       kanjiToday,
     ] = await Promise.all([
       prisma.onyomiGroup.count(),
@@ -36,7 +35,6 @@ export async function getDashboardData(userId) {
       getGroupStats(userId),
       getUserJlptLevel(userId),
       userTrack === 'jlpt' ? getUserJlptProgress(userId) : Promise.resolve(null),
-      getKanjiThisWeek(userId),
       getKanjiToday(userId),
     ]);
 
@@ -61,7 +59,6 @@ export async function getDashboardData(userId) {
       jlptLevel,
       trackSpecificStats,
       streak: user?.streak || 0,
-      kanjiThisWeek,
       studyDates: studyDates,
       kanjiToday,
     };

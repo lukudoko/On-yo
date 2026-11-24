@@ -99,9 +99,6 @@ export default function ProfileDrawer({
                           {stats.streak ?? 0} day streak
                         </span>
                       </div>
-                      <span className="text-[.7rem] text-gray-500">
-                        {stats.kanjiToday ?? 0} kanji today
-                      </span>
                     </div>
 
                     <div className="space-y-1.5">

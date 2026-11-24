@@ -27,14 +27,14 @@ const testCards = [
 ];
 
 export default function TestsCard({ itemVariants, data }) {
-  const { streak, kanjiThisWeek, track, jlptLevel, trackSpecificStats } = data;
+  const { streak, kanjiToday, track, jlptLevel, trackSpecificStats } = data;
 
   return (
     <motion.div variants={itemVariants} className="flex flex-col gap-4">
       <div className="grid grid-cols-3 gap-4">
         <div className="text-center p-3 bg-white/90 rounded-xl">
-          <div className="text-2xl font-bold text-[#6A7FDB]">{kanjiThisWeek} 字</div>
-          <div className="text-xs text-gray-600">this week</div>
+          <div className="text-2xl font-bold text-[#6A7FDB]">{kanjiToday} 字</div>
+          <div className="text-xs text-gray-600">studied today</div>
         </div>
         <div className="text-center p-3 bg-white/90 rounded-xl">
           <div className="text-2xl font-bold text-orange-600">{streak}</div>

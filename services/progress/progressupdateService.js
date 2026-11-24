@@ -82,7 +82,7 @@ export class ProgressUpdateService {
     };
   }
 
-  async discoveryStrategy(progress, isCorrect, userId) {
+  async discoveryStrategy(progress, isCorrect, userId, clientLocalDate) {
     if (progress.masteryLevel !== 0) {
       return {
         newMasteryLevel: progress.masteryLevel,
@@ -97,6 +97,7 @@ export class ProgressUpdateService {
     if (isCorrect) {
       newMasteryLevel = 1;
       newStreak = 1;
+      await updateStreak(userId, clientLocalDate); // <--- Add this
     }
 
     return { newMasteryLevel, newStreak, additionalData: {} };

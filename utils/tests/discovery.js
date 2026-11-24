@@ -90,6 +90,29 @@ export async function getDiscoveryKanji(userId, track, jlptLevel, limit) {
     });
   }
 
-  testableKanji.sort((a, b) => b.usefulnessScore - a.usefulnessScore);
-  return testableKanji.slice(0, limit);
+  const byOnyomi = new Map();
+  for (const k of testableKanji) {
+    if (!byOnyomi.has(k.onyomi)) byOnyomi.set(k.onyomi, []);
+    byOnyomi.get(k.onyomi).push(k);
+  }
+
+  const topGroups = [...byOnyomi.entries()]
+    .sort((a, b) => b[1][0].usefulnessScore - a[1][0].usefulnessScore)
+    .slice(0, 10);
+
+  const queues = topGroups.map(([, ks]) => [...ks]);
+  const picked = [];
+  while (picked.length < limit) {
+    let added = false;
+    for (const q of queues) {
+      if (picked.length >= limit) break;
+      if (q.length) {
+        picked.push(q.shift());
+        added = true;
+      }
+    }
+    if (!added) break;
+  }
+
+  return picked;
 }

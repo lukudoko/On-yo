@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@heroui/react";
 import { motion } from "framer-motion";
-import Confetti from "react-confetti-boom";
 import { submitDiscoveryAnswer } from "@/app/actions/discovery";
 
 import TestCard from "@/components/test/testcard";
@@ -53,7 +52,11 @@ export default function DiscoveryClient({ testData }) {
 
     setIsSubmitting(true);
     try {
-      await submitDiscoveryAnswer(currentKanji.kanjiId, correct);
+      await submitDiscoveryAnswer(
+        currentKanji.kanjiId,
+        correct,
+        new Date().toLocaleDateString('en-CA')
+      );
     } catch (err) {
       console.error("Failed to save discovery answer:", err);
     } finally {
@@ -76,7 +79,6 @@ export default function DiscoveryClient({ testData }) {
   if (showCompletion) {
     return (
       <div className="py-6 max-w-2xl mx-auto">
-        <Confetti particleCount={60} />
         <motion.div
           className="bg-white flex flex-col w-full max-w-lg  rounded-3xl mx-auto p-6 gap-6 text-center"
           initial={{ scale: 0.9, opacity: 0 }}
